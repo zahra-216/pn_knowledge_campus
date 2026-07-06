@@ -1,0 +1,45 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:wght@600&family=Inter:wght@400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Dark mode surface colors (UI/UX Design, Section 9.4). Dark mode reuses
+ * the brand navy itself as the elevated surface color rather than a
+ * generic dark grey, so it still reads as this institution at night.
+ * Toggled by adding/removing the `dark` class on <html> — see
+ * src/hooks/useTheme.ts.
+ */
+:root {
+  --color-surface: #ffffff;
+  --color-surface-alt: #f2f2f2;
+  --color-text: #1a1a1a;
+  --color-border: #d9d9d9;
+}
+
+.dark {
+  --color-surface: #1b2a4a; /* color-dark-surface */
+  --color-surface-alt: #0f1830; /* color-dark-bg */
+  --color-text: #e8e6e1; /* warm off-white, not pure white — reduces glare */
+  --color-border: #2a3f6b; /* color-dark-border */
+}
+
+body {
+  @apply font-sans text-body text-[color:var(--color-text)] bg-[color:var(--color-surface-alt)];
+}
+
+/* Visible keyboard focus ring everywhere, never suppressed (UI/UX Design §7.6) */
+:focus-visible {
+  outline: 2px solid theme("colors.gold.DEFAULT");
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
