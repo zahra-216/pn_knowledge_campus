@@ -62,6 +62,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -191,8 +192,20 @@ class AppServiceProvider extends ServiceProvider
         // bootstrap/app.php's throttleApi() routes the `api` middleware
         // group through a limiter named "api" — Laravel expects that
         // limiter registered here (it's not automatic).
+        //
+        // Audit fix (Critical remediation) — raised from 60/min. A single
+        // public page load legitimately fires 8-10 distinct GET requests
+        // (settings, header/footer menus, social links, the page's own
+        // content, plus the header's live-synced mega-menu lookups on
+        // first mount); at 60/min, browsing more than 5-6 pages inside a
+        // minute exhausted the budget and every page after that showed a
+        // raw "Too Many Attempts" error to a completely ordinary visitor,
+        // reproduced live during the Phase 1 audit. 180/min still caps
+        // genuine abuse while giving real headroom for real browsing —
+        // paired with deduping the settings fetch (usePublicSettings is
+        // now a single shared context instead of 4-5 independent calls).
         RateLimiter::for('api', function (Request $request) {
-            return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+            return Limit::perMinute(180)->by($request->user()?->id ?: $request->ip());
         });
 
         // Milestone 25 (Security Review) — the general 60/minute API
@@ -216,6 +229,29 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('public-write', function (Request $request) {
             return Limit::perMinute(10)->by($request->ip());
         });
+
+        // Audit fix (High remediation) — analytics/pageview was previously
+        // grouped under 'public-write' (10/min) alongside Inquiry/
+        // Application submissions. It fires on every single page
+        // navigation, so a visitor who'd merely browsed a few pages could
+        // exhaust the same 10/min budget a genuine applicant needed for
+        // their multi-step Apply flow, reproduced live during the Phase 1
+        // audit (a document upload mid-application was rejected as
+        // "Too Many Attempts"). A page-view ping carries no cost worth
+        // protecting the way an emailed inquiry or a file upload does, so
+        // it gets its own generous limiter instead of competing with them.
+        RateLimiter::for('page-view', function (Request $request) {
+            return Limit::perMinute(120)->by($request->ip());
+        });
+
+        // Audit fix (Low remediation) — password rules previously only
+        // checked length (min:10). One shared default policy means every
+        // place a password gets set (user create/update, password reset)
+        // enforces the same bar instead of drifting apart. `uncompromised()`
+        // is deliberately omitted — it calls an external API (Have I Been
+        // Pwned) during validation, which would make user creation depend
+        // on outbound internet access and add flakiness to tests/CI.
+        Password::defaults(fn () => Password::min(10)->mixedCase()->numbers()->symbols());
 
         // Production HTTPS enforcement — forces every URL this app
         // generates (password reset links, Storage::url() for the

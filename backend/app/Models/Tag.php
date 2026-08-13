@@ -8,8 +8,7 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
 /**
  * Shared tag vocabulary (Database Design, Section 4.6) — usable across
- * News and Blog Posts via the polymorphic `taggables` pivot. Only
- * BlogPost consumes it so far (News is a later Roadmap stage).
+ * News and Blog Posts via the polymorphic `taggables` pivot.
  */
 class Tag extends Model
 {
@@ -20,5 +19,11 @@ class Tag extends Model
     public function blogPosts(): MorphToMany
     {
         return $this->morphedByMany(BlogPost::class, 'taggable');
+    }
+
+    /** Audit fix (Medium remediation) — symmetric with News::tags(). */
+    public function news(): MorphToMany
+    {
+        return $this->morphedByMany(News::class, 'taggable');
     }
 }

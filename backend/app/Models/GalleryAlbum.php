@@ -41,8 +41,8 @@ class GalleryAlbum extends Model implements HasMedia
         // Spatie silently skips conversions for non-image files, so this
         // is safe to register even though the collection also holds
         // videos.
-        $this->addMediaConversion('thumb')->width(300)->height(300)->sharpen(10)->optimize()->nonQueued();
-        $this->addMediaConversion('web')->width(1920)->optimize()->nonQueued();
+        $this->addMediaConversion('thumb')->keepOriginalImageFormat()->width(300)->height(300)->sharpen(10)->optimize()->nonQueued();
+        $this->addMediaConversion('web')->keepOriginalImageFormat()->width(1920)->optimize()->nonQueued();
     }
 
     public function scopeActive(Builder $query): Builder

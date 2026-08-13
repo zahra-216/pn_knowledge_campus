@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
 /**
@@ -16,10 +17,14 @@ use Illuminate\Support\Carbon;
  * Admissions, International Students, Student Life, Career, and the
  * legal pages. Content lives entirely in the ordered `blocks` relation;
  * this model only carries routing/publishing metadata.
+ *
+ * SoftDeletes (audit fix, Medium remediation) — every other content
+ * model already has this per Database Design, Section 2.1's blanket
+ * rule; Pages was the one exception.
  */
 class Page extends Model
 {
-    use HasAuditColumns, HasFactory, HasSeoMeta;
+    use HasAuditColumns, HasFactory, HasSeoMeta, SoftDeletes;
 
     protected $fillable = [
         'title',

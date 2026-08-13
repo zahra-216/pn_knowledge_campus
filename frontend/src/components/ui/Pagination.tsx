@@ -7,7 +7,12 @@ interface PaginationProps {
   onPageChange: (page: number) => void;
 }
 
-/** Numbered pager for every public listing page — shown only when there's more than one page. */
+/**
+ * Numbered pager, shown only when there's more than one page — shared
+ * infrastructure used by both public listing pages and admin list
+ * screens (audit fix, Low remediation: previously lived under
+ * components/public/ despite half its callers being admin-only).
+ */
 export function Pagination({ meta, onPageChange }: PaginationProps) {
   if (meta.last_page <= 1) return null;
 

@@ -24,6 +24,7 @@ class DownloadRequest extends FormRequest
             'category_id' => ['nullable', 'integer', 'exists:download_categories,id'],
             'order' => ['sometimes', 'integer'],
             'is_active' => ['sometimes', 'boolean'],
+            'requires_inquiry' => ['sometimes', 'boolean'],
             'media_id' => ['nullable', 'integer', 'exists:media,id'],
         ];
     }

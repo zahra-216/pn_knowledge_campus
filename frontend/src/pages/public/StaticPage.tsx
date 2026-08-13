@@ -20,7 +20,11 @@ export function StaticPage() {
   const { data: page, isLoading, error } = usePublicDetail<Page>(ENDPOINTS.pages.public(slug));
 
   useSeoHead({
-    title: page?.title ?? slug,
+    // Audit fix (Medium remediation) — falling back to the raw URL slug
+    // showed an unformatted, lowercase, hyphenated string ("how-to-apply")
+    // as the browser tab title during any slow-network or transient-error
+    // window before the real page data arrived.
+    title: page?.title ?? "Loading…",
     canonicalPath: `/${slug}`,
     seo: page?.seo,
     jsonLd: page

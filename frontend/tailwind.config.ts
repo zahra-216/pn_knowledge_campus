@@ -27,6 +27,11 @@ export default {
         warning: "#8A6D00",
         danger: "#B3261E",
         info: "#2A5DAB",
+        // Public Site Redesign, Stage 1 — additive only. Navy/gold above are
+        // untouched (Admin CMS depends on them); ember is a new, narrowly-
+        // scoped accent reserved for time-bound urgency (deadlines, "live
+        // now" states) so it never competes with gold's heritage/premium role.
+        ember: { DEFAULT: "#C1502E", tint: "#F3DCCF" },
       },
       fontFamily: {
         // Headings (Display–H3 only, weight 600) per Typography §8.1
@@ -45,6 +50,23 @@ export default {
         body: ["16px", { lineHeight: "24px" }],
         "body-sm": ["14px", { lineHeight: "20px" }],
         caption: ["12px", { lineHeight: "16px" }],
+        // Public Site Redesign, Stage 1 — additive display-scale tokens for
+        // the homepage's statement moments (hero headline, stat band
+        // numerals). Fluid via clamp() so they scale with viewport instead
+        // of jumping at breakpoints. `display`/`h1`-`h4` above are untouched.
+        //
+        // Revised (feedback: "100% view feels completely zoomed") — the
+        // original pure-vw formulas (6vw / 5vw) put the *minimum* size
+        // achieved only below ~900px wide and hit their *max* by ~1536px,
+        // meaning every ordinary 1280–1920px laptop/desktop screen — the
+        // overwhelming majority of real visits — rendered at or within a
+        // few px of the ceiling (86–88px hero, 64px stat) permanently, not
+        // "fluid" at all in the range that matters. Rebuilt as rem+vw so
+        // the preferred value actually moves across that range: hero now
+        // reads ~48px at 1280px and ~59px at 1920px (was 77–88px both);
+        // stat reads ~37px at 1280px and ~43px at 1920px (was 64px both).
+        hero: ["clamp(2.75rem, 1.75rem + 1.6vw, 4rem)", { lineHeight: "1.05", letterSpacing: "-0.01em" }],
+        stat: ["clamp(2rem, 1.5rem + 1vw, 3rem)", { lineHeight: "1" }],
       },
       spacing: {
         // Section 7.2 — 4px base unit scale (Tailwind's default 4px scale

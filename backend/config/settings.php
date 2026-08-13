@@ -58,6 +58,11 @@ return [
     'branding' => [
         'logo_media_id' => ['type' => 'int', 'is_public' => true],
         'favicon_media_id' => ['type' => 'int', 'is_public' => true],
+        // Display height in pixels for the logo in each of its two public
+        // placements — independently adjustable since the header and
+        // footer render the logo at different natural sizes.
+        'header_logo_height' => ['type' => 'int', 'is_public' => true],
+        'footer_logo_height' => ['type' => 'int', 'is_public' => true],
     ],
 
     'footer' => [

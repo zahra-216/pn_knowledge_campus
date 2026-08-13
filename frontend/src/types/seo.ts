@@ -10,8 +10,10 @@ export interface SeoMeta {
   schema_type: string | null;
   og_title: string | null;
   og_description: string | null;
+  og_image_media_id: number | null;
   twitter_title: string | null;
   twitter_description: string | null;
+  twitter_image_media_id: number | null;
   robots_index: boolean;
   robots_follow: boolean;
 }
@@ -26,8 +28,10 @@ export type SeoMetaPayload = Partial<
     | "schema_type"
     | "og_title"
     | "og_description"
+    | "og_image_media_id"
     | "twitter_title"
     | "twitter_description"
+    | "twitter_image_media_id"
     | "robots_index"
     | "robots_follow"
   >

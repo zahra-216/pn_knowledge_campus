@@ -191,4 +191,19 @@ class AdminApplicationTest extends TestCase
 
         $this->actingAs($marketing)->get('/api/v1/admin/applications/export')->assertForbidden();
     }
+
+    /** Audit fix (Medium remediation) — export() previously ignored the same `search` param index() applies. */
+    public function test_export_respects_the_search_filter(): void
+    {
+        $admissions = $this->userWithRole('Admissions');
+        $this->submittedApplication(['first_name' => 'Jane', 'last_name' => 'Doe', 'email' => 'jane@example.com']);
+        $this->submittedApplication(['first_name' => 'Amit', 'last_name' => 'Shah', 'email' => 'amit@example.com']);
+
+        $response = $this->actingAs($admissions)->get('/api/v1/admin/applications/export?search=Jane');
+
+        $response->assertOk();
+        $csv = $response->streamedContent();
+        $this->assertStringContainsString('Jane', $csv);
+        $this->assertStringNotContainsString('Amit', $csv);
+    }
 }

@@ -9,6 +9,7 @@ use App\Http\Resources\FacultyResource;
 use App\Models\Faculty;
 use App\Models\Media;
 use App\Support\ApiResponse;
+use App\Support\PublicCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -26,6 +27,11 @@ class FacultyController extends Controller
         Gate::authorize('viewAny', Faculty::class);
 
         $faculties = Faculty::query()
+            // 'media' (audit fix, Medium remediation) — FacultyResource
+            // calls getFirstMedia() three times plus getMedia('gallery')
+            // per row; this was the worst offender of the audit's N+1
+            // finding since this index() had no eager-loading at all.
+            ->with('media')
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')))
             ->when($request->filled('search'), fn ($q) => $q->where('name', 'like', '%'.$request->string('search').'%'))
             ->orderBy('order')
@@ -41,6 +47,9 @@ class FacultyController extends Controller
         $faculty = Faculty::create($request->safe()->except(['icon_media_id', 'banner_media_id', 'dean_photo_media_id']));
 
         $this->syncSingleMedia($faculty, $request);
+
+        // Audit fix (Medium remediation) — see TestimonialController's docblock.
+        PublicCache::forgetHomepage();
 
         return ApiResponse::success(new FacultyResource($faculty->fresh()->load(['departments', 'courses'])), 201);
     }
@@ -59,6 +68,8 @@ class FacultyController extends Controller
         $faculty->update($request->safe()->except(['icon_media_id', 'banner_media_id', 'dean_photo_media_id']));
 
         $this->syncSingleMedia($faculty, $request);
+
+        PublicCache::forgetHomepage();
 
         return ApiResponse::success(new FacultyResource($faculty->fresh()->load(['departments', 'courses'])));
     }
@@ -86,6 +97,8 @@ class FacultyController extends Controller
         }
 
         $faculty->delete();
+
+        PublicCache::forgetHomepage();
 
         return response()->noContent();
     }
@@ -129,7 +142,7 @@ class FacultyController extends Controller
      */
     public function publicIndex(): JsonResponse
     {
-        $faculties = Faculty::published()->orderBy('order')->get();
+        $faculties = Faculty::published()->with('media')->orderBy('order')->get();
 
         return ApiResponse::success(FacultyResource::collection($faculties));
     }

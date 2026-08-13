@@ -5,12 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * A public form submission (Contact page, Course Detail's "Enquire Now").
- * See the migration's docblock for why this is a minimal slice — no
- * admin management screen yet, just the capture write-path and a status
- * column for whichever future milestone builds the inbox.
+ * See the migration's docblock for why this was originally a minimal
+ * slice — the admin inbox (status/search/export) shipped later, and
+ * `assigned_to` + `notes` (audit fix, High remediation) complete the
+ * staff-assignment/follow-up workflow the SRS and Database Design
+ * document both specified from the start.
  */
 class Inquiry extends Model
 {
@@ -25,6 +28,7 @@ class Inquiry extends Model
         'course_id',
         'international_applicant',
         'status',
+        'assigned_to',
     ];
 
     protected function casts(): array
@@ -37,5 +41,15 @@ class Inquiry extends Model
     public function course(): BelongsTo
     {
         return $this->belongsTo(Course::class);
+    }
+
+    public function assignedTo(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_to');
+    }
+
+    public function notes(): HasMany
+    {
+        return $this->hasMany(InquiryNote::class)->latest();
     }
 }

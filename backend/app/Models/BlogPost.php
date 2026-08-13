@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Support\Concerns\HasAuditColumns;
 use App\Support\Concerns\HasSeoMeta;
+use App\Support\RichText;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -70,8 +71,8 @@ class BlogPost extends Model implements HasMedia
 
     public function registerMediaConversions(?Media $media = null): void
     {
-        $this->addMediaConversion('thumb')->width(300)->height(300)->sharpen(10)->optimize()->nonQueued();
-        $this->addMediaConversion('web')->width(1920)->optimize()->nonQueued();
+        $this->addMediaConversion('thumb')->keepOriginalImageFormat()->width(300)->height(300)->sharpen(10)->optimize()->nonQueued();
+        $this->addMediaConversion('web')->keepOriginalImageFormat()->width(1920)->optimize()->nonQueued();
     }
 
     /**
@@ -122,5 +123,13 @@ class BlogPost extends Model implements HasMedia
             ->get();
 
         return $sameCategory->concat($byTag)->values();
+    }
+
+    /** Audit fix (High remediation) — see App\Support\RichText's docblock. */
+    protected static function booted(): void
+    {
+        static::saving(function (self $post) {
+            $post->body = RichText::sanitize($post->body);
+        });
     }
 }

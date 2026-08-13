@@ -6,6 +6,7 @@ use App\Support\Concerns\HasAuditColumns;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * A named menu group (Database Design, Section 4.5) — e.g. 'header',
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Menu extends Model
 {
-    use HasAuditColumns, HasFactory;
+    use HasAuditColumns, HasFactory, SoftDeletes;
 
     protected $fillable = ['name'];
 

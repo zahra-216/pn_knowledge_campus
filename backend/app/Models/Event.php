@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Spatie\MediaLibrary\HasMedia;
@@ -53,6 +54,20 @@ class Event extends Model implements HasMedia
         return $this->hasMany(EventSpeaker::class)->orderBy('order');
     }
 
+    /**
+     * Audit fix (Medium remediation) — the shared `faqs` table's own
+     * docblock already documented Event as a supported faqable type
+     * (Course::faqs() being the only one actually wired up); this
+     * closes that specific gap. A dedicated nested-route admin
+     * CRUD/UI matching CourseFaqController's is a larger, separate
+     * addition — deliberately out of scope here (see that
+     * controller's own docblock: Events was always its own later step).
+     */
+    public function faqs(): MorphMany
+    {
+        return $this->morphMany(Faq::class, 'faqable')->orderBy('order');
+    }
+
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('featured_image')->singleFile();
@@ -61,8 +76,8 @@ class Event extends Model implements HasMedia
 
     public function registerMediaConversions(?Media $media = null): void
     {
-        $this->addMediaConversion('thumb')->width(300)->height(300)->sharpen(10)->optimize()->nonQueued();
-        $this->addMediaConversion('web')->width(1920)->optimize()->nonQueued();
+        $this->addMediaConversion('thumb')->keepOriginalImageFormat()->width(300)->height(300)->sharpen(10)->optimize()->nonQueued();
+        $this->addMediaConversion('web')->keepOriginalImageFormat()->width(1920)->optimize()->nonQueued();
     }
 
     public function scopePublished(Builder $query): Builder

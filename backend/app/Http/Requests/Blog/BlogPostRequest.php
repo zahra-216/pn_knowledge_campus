@@ -44,7 +44,7 @@ class BlogPostRequest extends FormRequest
                 Rule::unique('blog_posts', 'slug')->ignore($postId),
             ],
             'excerpt' => ['nullable', 'string', 'max:500'],
-            'body' => [$isCreate ? 'required' : 'sometimes', 'string'],
+            'body' => [$isCreate ? 'required' : 'sometimes', 'string', 'max:50000'],
             'author_id' => ['nullable', 'integer', 'exists:users,id'],
             'status' => ['sometimes', Rule::in(['draft', 'published', 'scheduled', 'archived'])],
             'published_at' => ['nullable', 'date'],

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button, Input, Textarea, Switch, useToast } from "@/components/ui";
+import { MediaIdField } from "@/components/content-blocks/MediaIdField";
+import { useResolvedMedia } from "@/hooks/useResolvedMedia";
 import { api } from "@/lib/api";
 import { ENDPOINTS } from "@/lib/endpoints";
 import type { ApiResponse } from "@/types/api";
@@ -25,6 +27,7 @@ export function SeoFieldsPanel({ type, id, canEdit }: SeoFieldsPanelProps) {
   const [form, setForm] = useState<SeoMetaPayload>(EMPTY);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const media = useResolvedMedia([form.og_image_media_id, form.twitter_image_media_id]);
 
   useEffect(() => {
     setIsLoading(true);
@@ -85,12 +88,26 @@ export function SeoFieldsPanel({ type, id, canEdit }: SeoFieldsPanelProps) {
         onChange={(e) => setForm({ ...form, og_description: e.target.value })}
         rows={2}
       />
+      <MediaIdField
+        label="Open Graph Image"
+        type="image"
+        mediaId={form.og_image_media_id ?? null}
+        previewUrl={form.og_image_media_id ? media.get(form.og_image_media_id)?.thumb_url : null}
+        onChange={(id) => setForm({ ...form, og_image_media_id: id })}
+      />
       <Input label="Twitter Title" value={form.twitter_title ?? ""} onChange={(e) => setForm({ ...form, twitter_title: e.target.value })} />
       <Textarea
         label="Twitter Description"
         value={form.twitter_description ?? ""}
         onChange={(e) => setForm({ ...form, twitter_description: e.target.value })}
         rows={2}
+      />
+      <MediaIdField
+        label="Twitter Card Image"
+        type="image"
+        mediaId={form.twitter_image_media_id ?? null}
+        previewUrl={form.twitter_image_media_id ? media.get(form.twitter_image_media_id)?.thumb_url : null}
+        onChange={(id) => setForm({ ...form, twitter_image_media_id: id })}
       />
 
       <Switch

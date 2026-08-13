@@ -126,11 +126,11 @@ class DepartmentTest extends TestCase
         $department = Department::create(['faculty_id' => $faculty->id, 'name' => 'Department of Finance', 'slug' => 'department-of-finance']);
 
         $response = $this->actingAs($admin)->putJson("/api/v1/admin/seo/department/{$department->id}", [
-            'seo_title' => 'Department of Finance | PN Knowledge Campus',
+            'seo_title' => 'Department of Finance | PNK Global Campus',
         ]);
 
         $response->assertOk();
-        $this->assertSame('Department of Finance | PN Knowledge Campus', $response->json('data.seo_title'));
+        $this->assertSame('Department of Finance | PNK Global Campus', $response->json('data.seo_title'));
     }
 
     public function test_public_endpoint_filters_by_faculty_and_only_returns_published(): void

@@ -13,7 +13,7 @@ class SettingsCastingTest extends TestCase
 {
     public function test_casts_string_values(): void
     {
-        $this->assertSame('PN Knowledge Campus', Settings::cast('campus_name', 'PN Knowledge Campus'));
+        $this->assertSame('PNK Global Campus', Settings::cast('campus_name', 'PNK Global Campus'));
     }
 
     public function test_casts_int_values(): void

@@ -42,6 +42,21 @@ return [
             'visibility' => 'public',
             'throw' => false,
         ],
+
+        // Audit fix (Critical remediation) — spatie/laravel-backup's
+        // destination disk (config/backup.php), kept separate from
+        // 'local'/'public' so backup archives don't mix with the
+        // application's own runtime files. Local-disk backups on
+        // shared hosting are a starting point, not the whole story —
+        // see DEPLOYMENT.md's "Backups & Restore" section for copying
+        // this off-server, which an on-disk backup alone doesn't
+        // protect against (a lost/corrupted server takes its own
+        // backups with it).
+        'backups' => [
+            'driver' => 'local',
+            'root' => storage_path('app/backups'),
+            'throw' => false,
+        ],
     ],
 
     'links' => [

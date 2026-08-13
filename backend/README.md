@@ -1,4 +1,4 @@
-# PN Knowledge Campus — Backend (Foundation)
+# PNK Global Campus — Backend (Foundation)
 
 This is the **Milestone 0 foundation** from the Development Roadmap: Laravel 12
 project structure, authentication, RBAC, database connection, and the API

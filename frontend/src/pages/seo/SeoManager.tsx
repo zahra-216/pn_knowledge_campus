@@ -3,8 +3,7 @@ import { ArrowLeft, Lock, Search as SearchIcon, CheckCircle2, AlertTriangle } fr
 import { api } from "@/lib/api";
 import { ENDPOINTS } from "@/lib/endpoints";
 import { Breadcrumb } from "@/layouts/AdminLayout";
-import { Card, Table, Badge, Modal, type TableColumn } from "@/components/ui";
-import { Pagination } from "@/components/public/Pagination";
+import { Card, Table, Badge, Modal, type TableColumn, Pagination } from "@/components/ui";
 import { SeoFieldsPanel } from "@/components/seo/SeoFieldsPanel";
 import { usePermission } from "@/hooks/usePermission";
 import type { ApiCollection, ApiResponse, PaginationMeta } from "@/types/api";

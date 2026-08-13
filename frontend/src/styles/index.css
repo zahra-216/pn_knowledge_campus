@@ -1,4 +1,14 @@
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:wght@600&family=Inter:wght@400;500;600;700&display=swap");
+/*
+ * Public Site Redesign, Stage 1 — the Fraunces request now spans its full
+ * optical-size and weight axes (plus italic) instead of one static weight
+ * (600). Same family already approved for the brand, just finally used
+ * for what a variable serif is for: a light, huge display headline and a
+ * small, upright body-serif pull-quote are now the *same* font file, not
+ * two different ones. Purely additive — nothing that already renders at
+ * weight 600 changes, so Admin (which only ever requests that weight) is
+ * unaffected. Inter gains 800 for the homepage's statement numerals.
+ */
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,400..600&family=Inter:wght@400;500;600;700;800&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -16,6 +26,30 @@
   --color-surface-alt: #f2f2f2;
   --color-text: #1a1a1a;
   --color-border: #d9d9d9;
+
+  /*
+   * Public Site Redesign, Stage 1 — additive tokens used only by the new
+   * public shell/homepage components. Deliberately separate from
+   * --color-* above (which Admin's own layout reads directly) so this
+   * redesign can never change Admin's rendering, and separate again from
+   * navy/gold (still the brand fill colors, used directly via their own
+   * Tailwind classes). `--pub-ink` is a slightly deeper, richer navy-black
+   * reserved for full-bleed "statement" sections (footer, stat band) —
+   * distinct from the flatter --color-surface-alt used for plain tinted
+   * sections.
+   */
+  --pub-ink: #10162c;
+  --pub-ink-raised: #1a2340;
+  --pub-paper: #ffffff;
+  --pub-paper-tint: #f5f3ee;
+  --pub-line: #e6e3da;
+  --pub-muted: #666a78;
+
+  /* Fluid section-padding tiers (Intimate / Standard / Statement) — scale
+     with viewport so mobile never inherits desktop's generous padding. */
+  --space-sm: clamp(2.5rem, 5vw, 4rem);
+  --space-md: clamp(4rem, 8vw, 6rem);
+  --space-lg: clamp(6rem, 11vw, 9rem);
 }
 
 .dark {
@@ -23,6 +57,13 @@
   --color-surface-alt: #0f1830; /* color-dark-bg */
   --color-text: #e8e6e1; /* warm off-white, not pure white — reduces glare */
   --color-border: #2a3f6b; /* color-dark-border */
+
+  --pub-ink: #05070f;
+  --pub-ink-raised: #10162c;
+  --pub-paper: #12121a;
+  --pub-paper-tint: #191926;
+  --pub-line: rgba(255, 255, 255, 0.12);
+  --pub-muted: #9a9daa;
 }
 
 body {
@@ -42,4 +83,45 @@ body {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/*
+ * Public Site Redesign, Stage 1 — the site's entire motion budget lives in
+ * these few rules: a one-time scroll reveal (see components/public/Reveal.tsx)
+ * and two mount-triggered "rise" animations for the mega-menu/mobile drawer.
+ * All three already collapse to 0.01ms under the reduced-motion rule above,
+ * since they're plain animation/transition-duration, nothing bypasses it.
+ */
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.6s cubic-bezier(0.16, 0.8, 0.3, 1), transform 0.6s cubic-bezier(0.16, 0.8, 0.3, 1);
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@keyframes pub-rise-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-pub-rise-in {
+  animation: pub-rise-in 0.18s ease-out both;
+}
+
+@keyframes pub-panel-in {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.animate-pub-panel-in {
+  animation: pub-panel-in 0.32s cubic-bezier(0.16, 0.8, 0.3, 1) both;
+}
+
+@keyframes pub-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-pub-fade-in {
+  animation: pub-fade-in 0.32s ease-out both;
 }

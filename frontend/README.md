@@ -1,4 +1,4 @@
-# PN Knowledge Campus — Frontend (Foundation)
+# PNK Global Campus — Frontend (Foundation)
 
 This is the **Milestone 0 foundation** from the Development Roadmap: React 19
 + TypeScript + Vite + Tailwind, wired to the Laravel backend's Auth API,

@@ -67,6 +67,27 @@ export function Downloads() {
     await fetchDownloads();
   }
 
+  /**
+   * A gated download's file_url points at the Sanctum-authenticated
+   * /admin/downloads/{id}/file preview route (see DownloadResource's
+   * docblock) — a plain `<a href>` wouldn't carry the bearer token, the
+   * same reason ApplicationDetail.tsx fetches its own private-disk
+   * documents as a blob instead of linking directly.
+   */
+  async function handlePreview(download: Download) {
+    try {
+      const { data } = await api.get(download.file_url as string, { responseType: "blob" });
+      const url = URL.createObjectURL(data as Blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = download.file_name ?? download.title;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      showToast("Could not open this file.", "error");
+    }
+  }
+
   if (!can("downloads.view")) {
     return (
       <div className="flex flex-col gap-4">
@@ -87,9 +108,15 @@ export function Downloads() {
       header: "",
       render: (d) =>
         d.file_url ? (
-          <a href={d.file_url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${d.file_name}`}>
-            <FileText className="h-8 w-8 text-navy dark:text-gold" />
-          </a>
+          d.requires_inquiry ? (
+            <button type="button" onClick={() => handlePreview(d)} aria-label={`Open ${d.file_name}`}>
+              <FileText className="h-8 w-8 text-navy dark:text-gold" />
+            </button>
+          ) : (
+            <a href={d.file_url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${d.file_name}`}>
+              <FileText className="h-8 w-8 text-navy dark:text-gold" />
+            </a>
+          )
         ) : (
           <FileText className="h-8 w-8 text-neutral-300" />
         ),
@@ -98,6 +125,12 @@ export function Downloads() {
     { key: "category", header: "Category", render: (d) => d.category?.name ?? "—" },
     { key: "size", header: "Size", render: (d) => formatSize(d.file_size) },
     { key: "order", header: "Order", render: (d) => d.order },
+    { key: "downloads", header: "Downloads", render: (d) => d.download_count },
+    {
+      key: "gated",
+      header: "Gated",
+      render: (d) => (d.requires_inquiry ? <Badge tone="warning">Requires form</Badge> : "—"),
+    },
     { key: "status", header: "Status", render: (d) => <Badge tone={d.is_active ? "success" : "neutral"}>{d.is_active ? "Active" : "Inactive"}</Badge> },
     {
       key: "actions",

@@ -140,7 +140,7 @@ export type CoursePayload = Partial<
   >
 > & {
   faculty_id?: number;
-  department_id?: number;
+  department_id?: number | null;
   level_id?: number;
   mode_id?: number;
   category_id?: number | null;

@@ -13,7 +13,14 @@ interface DownloadFormProps {
   onSave: (payload: DownloadPayload) => Promise<void>;
 }
 
-const EMPTY: DownloadPayload = { title: "", description: "", category_id: null, order: 0, is_active: true };
+const EMPTY: DownloadPayload = {
+  title: "",
+  description: "",
+  category_id: null,
+  order: 0,
+  is_active: true,
+  requires_inquiry: false,
+};
 
 export function DownloadForm({ open, download, onClose, onSave }: DownloadFormProps) {
   const [form, setForm] = useState<DownloadPayload>(EMPTY);
@@ -29,6 +36,7 @@ export function DownloadForm({ open, download, onClose, onSave }: DownloadFormPr
             category_id: download.category?.id ?? null,
             order: download.order,
             is_active: download.is_active,
+            requires_inquiry: download.requires_inquiry,
           }
         : EMPTY
     );
@@ -110,6 +118,11 @@ export function DownloadForm({ open, download, onClose, onSave }: DownloadFormPr
         />
 
         <Switch label="Active" checked={form.is_active ?? true} onChange={(checked) => setForm({ ...form, is_active: checked })} />
+        <Switch
+          label="Require a name/email before download"
+          checked={form.requires_inquiry ?? false}
+          onChange={(checked) => setForm({ ...form, requires_inquiry: checked })}
+        />
       </div>
     </Modal>
   );

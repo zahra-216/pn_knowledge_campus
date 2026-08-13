@@ -15,14 +15,16 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Users, Eye, ClipboardList, Mail, TrendingUp } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Users, Eye, ClipboardList, Mail, TrendingUp, GraduationCap, Newspaper, FileText, CalendarDays, Files, History } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import { ENDPOINTS } from "@/lib/endpoints";
 import { Breadcrumb } from "@/layouts/AdminLayout";
-import { Card, Spinner } from "@/components/ui";
+import { Card, Spinner, Badge } from "@/components/ui";
+import type { BadgeTone } from "@/components/ui/Badge";
 import type { ApiResponse } from "@/types/api";
-import type { DashboardAnalytics } from "@/types/analytics";
+import type { ActivityType, DashboardAnalytics } from "@/types/analytics";
 
 const RANGE_OPTIONS = [7, 30, 90] as const;
 
@@ -38,6 +40,32 @@ const STATUS_LABEL: Record<string, string> = {
   approved: "Approved",
   rejected: "Rejected",
 };
+
+const CONTENT_STATUS_TONE: Record<string, BadgeTone> = {
+  draft: "neutral",
+  published: "success",
+  scheduled: "warning",
+  archived: "neutral",
+};
+
+const ACTIVITY_TYPE_LABEL: Record<ActivityType, string> = {
+  course: "Course",
+  news: "News",
+  blog: "Blog",
+  event: "Event",
+  page: "Page",
+};
+
+function timeAgo(dateString: string): string {
+  const seconds = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
 
 function formatDateLabel(date: string): string {
   return new Date(date).toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -105,6 +133,15 @@ export function Dashboard() {
             <StatCard icon={Eye} label="Page Views" value={sum(analytics.page_views.data)} />
             <StatCard icon={ClipboardList} label="Applications" value={sum(analytics.applications.data)} />
             <StatCard icon={Mail} label="Inquiries" value={sum(analytics.inquiries.data)} />
+          </div>
+
+          {/* Audit fix (High remediation) — FR-18's "published content counts", the other half of the Dashboard's brief this screen never covered before. */}
+          <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
+            <StatCard icon={GraduationCap} label="Published Courses" value={analytics.published_content_counts.courses} />
+            <StatCard icon={Newspaper} label="Published News" value={analytics.published_content_counts.news} />
+            <StatCard icon={FileText} label="Published Blog Posts" value={analytics.published_content_counts.blog_posts} />
+            <StatCard icon={CalendarDays} label="Published Events" value={analytics.published_content_counts.events} />
+            <StatCard icon={Files} label="Published Pages" value={analytics.published_content_counts.pages} />
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
@@ -185,6 +222,33 @@ export function Dashboard() {
                   <Bar dataKey="count" fill="#A6812C" name="Interest" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
+            )}
+          </ChartCard>
+
+          {/* Audit fix (High remediation) — FR-18's "recent activity", the other half of the Dashboard's brief this screen never covered before. */}
+          <ChartCard title="Recent Activity" icon={History}>
+            {analytics.recent_activity.length === 0 ? (
+              <p className="py-8 text-center text-body-sm text-neutral-500">No content has been created or edited yet.</p>
+            ) : (
+              <ul className="flex flex-col divide-y divide-[color:var(--color-border)]">
+                {analytics.recent_activity.map((item) => (
+                  <li key={`${item.type}-${item.id}`} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
+                    <div className="flex items-center gap-3">
+                      <span className="rounded bg-navy/10 px-2 py-0.5 text-caption font-medium text-navy dark:bg-white/10 dark:text-white">
+                        {ACTIVITY_TYPE_LABEL[item.type]}
+                      </span>
+                      <Link to={item.admin_url} className="text-body-sm font-medium text-[color:var(--color-text)] hover:underline">
+                        {item.title}
+                      </Link>
+                      <Badge tone={CONTENT_STATUS_TONE[item.status] ?? "neutral"}>{item.status}</Badge>
+                    </div>
+                    <div className="flex items-center gap-2 text-caption text-neutral-500">
+                      {item.updated_by && <span>{item.updated_by}</span>}
+                      <span>{timeAgo(item.updated_at)}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             )}
           </ChartCard>
         </>

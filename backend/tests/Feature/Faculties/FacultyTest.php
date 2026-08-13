@@ -132,16 +132,16 @@ class FacultyTest extends TestCase
         $faculty = Faculty::create(['name' => 'Faculty of Business', 'slug' => 'faculty-of-business']);
 
         $response = $this->actingAs($admin)->putJson("/api/v1/admin/seo/faculty/{$faculty->id}", [
-            'seo_title' => 'Faculty of Business | PN Knowledge Campus',
+            'seo_title' => 'Faculty of Business | PNK Global Campus',
             'meta_description' => 'Learn more about our Faculty of Business.',
         ]);
 
         $response->assertOk();
-        $this->assertSame('Faculty of Business | PN Knowledge Campus', $response->json('data.seo_title'));
+        $this->assertSame('Faculty of Business | PNK Global Campus', $response->json('data.seo_title'));
 
         $this->actingAs($admin)->getJson("/api/v1/admin/seo/faculty/{$faculty->id}")
             ->assertOk()
-            ->assertJsonPath('data.seo_title', 'Faculty of Business | PN Knowledge Campus');
+            ->assertJsonPath('data.seo_title', 'Faculty of Business | PNK Global Campus');
     }
 
     public function test_public_endpoint_only_returns_published_faculties_ordered(): void

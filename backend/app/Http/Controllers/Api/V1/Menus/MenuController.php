@@ -38,14 +38,14 @@ class MenuController extends Controller
 
         $menu = Menu::create($request->validated());
 
-        return ApiResponse::success(new MenuResource($menu->load('topLevelItems.children.children')), 201);
+        return ApiResponse::success(new MenuResource($menu->load('topLevelItems.children.children.children')), 201);
     }
 
     public function show(Menu $menu): JsonResponse
     {
         Gate::authorize('viewAny', Menu::class);
 
-        return ApiResponse::success(new MenuResource($menu->load('topLevelItems.children.children')));
+        return ApiResponse::success(new MenuResource($menu->load('topLevelItems.children.children.children')));
     }
 
     public function update(MenuRequest $request, Menu $menu): JsonResponse
@@ -58,7 +58,7 @@ class MenuController extends Controller
         PublicCache::forgetMenu($originalName);
         PublicCache::forgetMenu($menu->name);
 
-        return ApiResponse::success(new MenuResource($menu->load('topLevelItems.children.children')));
+        return ApiResponse::success(new MenuResource($menu->load('topLevelItems.children.children.children')));
     }
 
     public function destroy(Menu $menu): Response
@@ -82,10 +82,18 @@ class MenuController extends Controller
      * this frontend does responsive layout (CSS breakpoints), not
      * user-agent sniffing.
      *
-     * Eager-loading is capped at 3 levels (top-level, dropdown,
-     * mega-menu column) — the schema itself supports unlimited nesting
-     * via parent_id, but no real navigation UI (this project's or any
-     * other CMS's) reasonably goes deeper than that in practice.
+     * Eager-loading is capped at 3 levels of actual content (top-level,
+     * dropdown, mega-menu column) — the schema itself supports unlimited
+     * nesting via parent_id, but no real navigation UI (this project's
+     * or any other CMS's) reasonably goes deeper than that in practice.
+     * The relation chain below goes one level past that (4 deep): each
+     * MenuItemResource includes `children` via `whenLoaded('children')`,
+     * which omits the key entirely — not `[]` — for any item whose own
+     * `children` relation wasn't loaded. Without the 4th level, the
+     * deepest real items (mega-menu column entries) would each be
+     * missing `children` rather than having an empty array, which broke
+     * the admin Menu Builder's tree walker (`nodes is not iterable`)
+     * the moment a menu actually reached 3 levels deep.
      *
      * Cached per menu key (see PublicCache's docblock) — invalidated
      * explicitly by every MenuController/MenuItemController write that
@@ -102,6 +110,8 @@ class MenuController extends Controller
             }, 'topLevelItems.children' => function ($query) {
                 $query->where('is_active', true)->currentlyScheduled();
             }, 'topLevelItems.children.children' => function ($query) {
+                $query->where('is_active', true)->currentlyScheduled();
+            }, 'topLevelItems.children.children.children' => function ($query) {
                 $query->where('is_active', true)->currentlyScheduled();
             }]);
 

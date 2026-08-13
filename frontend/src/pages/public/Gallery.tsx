@@ -5,9 +5,8 @@ import { usePublicList } from "@/hooks/usePublicList";
 import { useSeoHead } from "@/hooks/useSeoHead";
 import { ENDPOINTS } from "@/lib/endpoints";
 import { AsyncState } from "@/components/public/AsyncState";
-import { Pagination } from "@/components/public/Pagination";
 import { Breadcrumb } from "@/components/public/Breadcrumb";
-import { Card, EmptyState } from "@/components/ui";
+import { Card, EmptyState, Pagination } from "@/components/ui";
 import type { GalleryAlbum } from "@/types/gallery";
 
 export function Gallery() {

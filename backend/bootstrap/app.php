@@ -34,6 +34,17 @@ return Application::configure(basePath: dirname(__DIR__))
         api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
+        // routes/web.php (audit fix, High remediation — the SEO meta
+        // shell) is loaded via `then`, not the `web:` parameter, so it
+        // never picks up Laravel's default 'web' middleware group
+        // (sessions, CSRF, cookie encryption) — this route is a
+        // read-only, cacheable content response with no session state
+        // of its own, and a stray `Set-Cookie` header would work against
+        // the very thing it exists for (a crawler-friendly, CDN-cacheable
+        // public page).
+        then: function (): void {
+            require __DIR__.'/../routes/web.php';
+        },
     )
     ->withMiddleware(function (Middleware $middleware): void {
         // Sanctum's stateful-SPA middleware is only needed if the SPA and
@@ -67,6 +78,20 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
         ]);
+
+        // Audit fix (High remediation) — Laravel's default Authenticate
+        // middleware calls route('login') to build AuthenticationException's
+        // redirect target whenever the request doesn't explicitly send
+        // Accept: application/json, and does so *before* our custom
+        // AuthenticationException renderer below ever runs. This app has no
+        // named 'login' route at all (it's a pure token API behind a
+        // separate SPA), so that call itself threw RouteNotFoundException —
+        // a real client hitting an admin endpoint without that header got a
+        // raw 500 with a leaked stack trace instead of a clean 401,
+        // reproduced live during the Phase 1 audit. Always redirecting
+        // nowhere means the middleware only ever throws AuthenticationException
+        // itself, which our renderer already turns into a proper 401.
+        $middleware->redirectGuestsTo(fn () => null);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Every API error response follows the standard envelope defined

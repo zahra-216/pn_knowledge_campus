@@ -10,3 +10,4 @@ export { Modal } from "./Modal";
 export { Tabs, type TabItem } from "./Tabs";
 export { Table, type TableColumn } from "./Table";
 export { Switch } from "./Switch";
+export { Pagination } from "./Pagination";

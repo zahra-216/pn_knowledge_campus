@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { Lock, Search, Download } from "lucide-react";
+import { Lock, Search, Download, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { ENDPOINTS } from "@/lib/endpoints";
 import { Breadcrumb } from "@/layouts/AdminLayout";
-import { Card, Button, Table, Badge, type TableColumn } from "@/components/ui";
+import { Card, Button, Table, Badge, useToast, type TableColumn, Pagination } from "@/components/ui";
 import type { BadgeTone } from "@/components/ui/Badge";
-import { Pagination } from "@/components/public/Pagination";
 import { usePermission } from "@/hooks/usePermission";
 import type { ApiCollection, PaginationMeta } from "@/types/api";
 import type { AdminApplication, ApplicationStatus } from "@/types/application";
@@ -36,7 +35,10 @@ const STATUS_LABEL: Record<ApplicationStatus, string> = {
 export function Applications() {
   const navigate = useNavigate();
   const { can } = usePermission();
+  const { showToast } = useToast();
   const canExport = can("applications.export");
+  const canPruneDrafts = can("applications.review");
+  const [isPruning, setIsPruning] = useState(false);
 
   const [applications, setApplications] = useState<AdminApplication[]>([]);
   const [meta, setMeta] = useState<PaginationMeta | null>(null);
@@ -94,6 +96,28 @@ export function Applications() {
     URL.revokeObjectURL(url);
   }
 
+  /**
+   * Audit fix (Low remediation) — drafts (started but never submitted)
+   * are deliberately invisible in the list/review views above (an
+   * unsubmitted application isn't a real one yet), which previously
+   * meant they could never be cleaned up at all. This is a bulk sweep,
+   * not a per-row action, since there's nothing to select one from.
+   */
+  async function handlePruneDrafts() {
+    if (!window.confirm("Remove abandoned application drafts older than 30 days? This can't be undone from here.")) {
+      return;
+    }
+    setIsPruning(true);
+    try {
+      const { data } = await api.delete<{ data: { deleted: number } }>(ENDPOINTS.applications.adminPruneDrafts);
+      showToast(`Removed ${data.data.deleted} abandoned draft${data.data.deleted === 1 ? "" : "s"}.`, "success");
+    } catch {
+      showToast("Could not clean up drafts.", "error");
+    } finally {
+      setIsPruning(false);
+    }
+  }
+
   if (!can("applications.view")) {
     return (
       <div className="flex flex-col gap-4">
@@ -136,12 +160,20 @@ export function Applications() {
 
       <div className="flex items-center justify-between">
         <h1 className="font-display text-h2 font-semibold text-[color:var(--color-text)]">Applications</h1>
-        {canExport && (
-          <Button variant="secondary" onClick={handleExport}>
-            <Download className="h-4 w-4" aria-hidden="true" />
-            Export CSV
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {canPruneDrafts && (
+            <Button variant="secondary" onClick={handlePruneDrafts} disabled={isPruning}>
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
+              Clean Up Old Drafts
+            </Button>
+          )}
+          {canExport && (
+            <Button variant="secondary" onClick={handleExport}>
+              <Download className="h-4 w-4" aria-hidden="true" />
+              Export CSV
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">

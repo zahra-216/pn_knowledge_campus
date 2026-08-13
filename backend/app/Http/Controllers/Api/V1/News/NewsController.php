@@ -10,6 +10,7 @@ use App\Models\Media;
 use App\Models\News;
 use App\Models\NewsCategory;
 use App\Support\ApiResponse;
+use App\Support\PublicCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -25,7 +26,10 @@ use Illuminate\Support\Facades\Gate;
  */
 class NewsController extends Controller
 {
-    private const WITH = ['category', 'author'];
+    // 'media' (audit fix, Medium remediation) — see CourseController's
+    // identical WITH-constant comment for why this avoids an N+1 on
+    // NewsResource's featured_image/gallery lookups.
+    private const WITH = ['category', 'author', 'media'];
 
     public function index(Request $request): JsonResponse
     {
@@ -63,6 +67,9 @@ class NewsController extends Controller
             return $article;
         });
 
+        // Audit fix (Medium remediation) — see TestimonialController's docblock.
+        PublicCache::forgetHomepage();
+
         return ApiResponse::success(new NewsResource($article->fresh()->load(self::WITH)), 201);
     }
 
@@ -84,6 +91,8 @@ class NewsController extends Controller
             $this->syncSeo($news, $request);
         });
 
+        PublicCache::forgetHomepage();
+
         return ApiResponse::success(new NewsResource($news->fresh()->load(self::WITH)));
     }
 
@@ -95,6 +104,8 @@ class NewsController extends Controller
         Gate::authorize('delete', News::class);
 
         $news->delete();
+
+        PublicCache::forgetHomepage();
 
         return response()->noContent();
     }
@@ -111,6 +122,8 @@ class NewsController extends Controller
             'status' => 'published',
             'published_at' => $news->published_at ?? Carbon::now(),
         ]);
+
+        PublicCache::forgetHomepage();
 
         return ApiResponse::success(new NewsResource($news->fresh()->load(self::WITH)));
     }

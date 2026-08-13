@@ -1,66 +1,71 @@
-# PN Knowledge Campus — Project Foundation
+# PN Knowledge Campus
 
-This is **Development Roadmap Milestone 0** delivered as real, working code —
-not documentation. It is the shared starting point every later milestone
-(Courses, News, Pages, CMS modules, etc.) will be built on top of.
+A CMS-driven higher-education institution website: a Laravel 12 API backend
+and a React 19 + TypeScript admin panel + public site, built module-by-module
+against five specification documents (SRS, Database Design, API Design,
+UI/UX Design, Development Roadmap).
 
-This package intentionally does **not** include the CMS, Courses, Blog,
-News, or any other content module. Those ship one at a time, in the order
-defined in the Development Roadmap document, starting with **Milestone 1
-— Core Settings & Media Library**.
+*(Audit fix, Medium remediation — this file and `VERIFICATION.md` previously
+described a "Milestone 0, only login works" foundation state. Both are
+rewritten here to reflect what has actually shipped since; see
+`backend/DEPLOYMENT.md` for the living, most-current operational reference.)*
 
 ## What's in the box
 
 ```
 pn-knowledge-campus/
-├── backend/     Laravel 12 API (PHP 8.3+, MySQL 8.x, Sanctum, Spatie Permission)
-├── frontend/    React 19 + TypeScript + Vite + Tailwind admin panel
-└── VERIFICATION.md   What was actually tested in this environment, and how
+├── backend/     Laravel 12 API (PHP 8.3+, Sanctum, Spatie Permission, Spatie Media Library)
+└── frontend/    React 19 + TypeScript + Vite + Tailwind — admin panel and public site in one SPA
 ```
 
-Each half has its own `README.md` with exact setup commands. Read
-`VERIFICATION.md` first if you want to know what's actually been proven
-to work versus what's written-but-unverified.
+## What's actually built
 
-## The one thing that works end-to-end right now
+- **Admin CMS**: Settings, Media Library, Menus, Page Builder, Homepage
+  Builder, Hero Slider, Faculties/Departments/Courses, Blog, News, Events,
+  Gallery, Testimonials, Partners, FAQ, Downloads catalog, Applications
+  review queue, Inquiry inbox (with staff assignment and follow-up notes),
+  SEO Manager, Users/Roles/Permissions, Dashboard analytics.
+- **Public website**: every corresponding public page (home, listings,
+  detail pages, static Page-Builder pages, search, apply/enquire flows),
+  server-rendered per-page `<title>`/meta tags for real crawlers (not just
+  client-side `document.title`), a sitemap/robots generator, and gated
+  downloads (a capture form + signed URL in front of a file).
+- **Auth & RBAC**: Sanctum bearer tokens (now with a 30-day expiration and
+  an admin "revoke all sessions" action), five baseline roles enforced via
+  Spatie Permission against the SRS's own Permission Matrix.
+- **Automated backups**: `spatie/laravel-backup`, scheduled daily (see
+  `backend/DEPLOYMENT.md`'s "Backups & Restore" section).
+- **Tests**: 439+ PHPUnit tests (backend) and a Vitest + React Testing
+  Library suite (frontend) covering the highest-risk flows (auth, gated
+  downloads, the public header's menu-visibility logic). Run them yourself
+  rather than trusting a point-in-time log — see "How to verify this
+  yourself" below.
 
-Login. That's it, deliberately. A CMS user can:
+## Setup
 
-1. Open the React admin panel
-2. Log in with a seeded Super Admin account
-3. Land on a (mostly empty) Dashboard behind the real Admin Layout shell
-4. Log out
+Each half has its own `README.md` with exact local-dev setup commands
+(`backend/README.md`, `frontend/README.md`) — those still describe the
+Milestone 0 foundation's file layout accurately for what shipped in that
+milestone, they just haven't been extended to narrate every later one.
+For everything about running this in production — environment variables,
+the queue worker, the scheduler, backups, and how to verify a deploy —
+**`backend/DEPLOYMENT.md` is the canonical, currently-maintained reference.**
 
-Everything visible around that flow — the sidebar, top bar, dark mode
-toggle, notification bell, breadcrumb — is real, built, and wired to
-match the UI/UX Design document exactly. It's just not yet connected to
-any content, because there isn't any content yet. That's next.
+## How to verify this yourself
+
+Don't rely on a stale log — run the real suites:
+
+```
+cd backend && php artisan test && ./vendor/bin/pint --test
+cd frontend && npm run typecheck && npm run lint && npm test && npm run build
+```
+
+All four should pass clean on a checkout with `composer install`/`npm ci`
+already run and a configured `.env`.
 
 ## Why it's split this way
 
-This mirrors the five specification documents already produced for this
-project (SRS, Database Design, UI/UX Design, API Design, Development
-Roadmap). Every file in this codebase traces back to a specific section
-in one of those documents — the code comments say which one, so a
-developer picking this up later isn't guessing why something is
-structured the way it is.
-
-## What a developer does next
-
-Open the Development Roadmap document to **Milestone 1: Core Settings &
-Media Library**, and follow its Objectives / Estimated Files / Estimated
-Tables / Frontend Components / Backend Components / Testing / Expected
-Deliverables / Dependency Order exactly as written. Nothing in this
-foundation needs to be revisited to start that milestone — that's the
-point of building it in this order.
-
-## A note on what was and wasn't run in this environment
-
-This sandbox cannot reach Packagist (PHP's package registry), so the
-Laravel side could not have `composer install` run against it — every
-PHP file was hand-written and syntax-checked (`php -l`) but not executed.
-The React side *could* be installed and built for real here, and was —
-see `VERIFICATION.md`. Neither limitation reflects a limitation of the
-code itself; it's about what this particular sandbox can reach on the
-network. Run `composer install` on your own machine or CI before relying
-on the backend.
+Every file in this codebase traces back to a specific section in one of
+the five specification documents — the code comments say which one, so a
+developer picking this up later isn't guessing why something is structured
+the way it is.

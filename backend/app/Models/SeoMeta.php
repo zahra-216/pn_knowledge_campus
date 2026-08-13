@@ -31,8 +31,10 @@ class SeoMeta extends Model
         'schema_type',
         'og_title',
         'og_description',
+        'og_image_media_id',
         'twitter_title',
         'twitter_description',
+        'twitter_image_media_id',
         'robots_index',
         'robots_follow',
     ];

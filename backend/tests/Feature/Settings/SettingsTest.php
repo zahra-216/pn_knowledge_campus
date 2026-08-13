@@ -56,7 +56,7 @@ class SettingsTest extends TestCase
     {
         $response = $this->actingAs($this->superAdmin())->putJson('/api/v1/admin/settings', [
             'settings' => [
-                'campus_name' => 'PN Knowledge Campus',
+                'campus_name' => 'PNK Global Campus',
                 'not_a_real_key' => 'nope',
             ],
         ]);
@@ -64,7 +64,7 @@ class SettingsTest extends TestCase
         $response->assertUnprocessable();
         $response->assertJsonValidationErrors(['settings.not_a_real_key']);
 
-        $this->assertDatabaseMissing('settings', ['key' => 'campus_name', 'value' => 'PN Knowledge Campus']);
+        $this->assertDatabaseMissing('settings', ['key' => 'campus_name', 'value' => 'PNK Global Campus']);
     }
 
     public function test_bulk_update_writes_value_only_and_leaves_group_and_visibility_untouched(): void
@@ -84,7 +84,7 @@ class SettingsTest extends TestCase
         $this->actingAs($this->superAdmin())->putJson('/api/v1/admin/settings', [
             'settings' => [
                 'smtp_password' => 'super-secret',
-                'campus_name' => 'PN Knowledge Campus',
+                'campus_name' => 'PNK Global Campus',
             ],
         ])->assertOk();
 

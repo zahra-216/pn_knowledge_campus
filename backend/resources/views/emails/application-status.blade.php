@@ -5,7 +5,7 @@
     @if ($application->status === 'approved')
         <p>Congratulations! Your application ({{ $application->application_number }}) has been <strong>approved</strong>.</p>
     @else
-        <p>Thank you for your interest in PN Knowledge Campus. After review, your application ({{ $application->application_number }}) was not successful at this time.</p>
+        <p>Thank you for your interest in PNK Global Campus. After review, your application ({{ $application->application_number }}) was not successful at this time.</p>
     @endif
     @if ($application->review_notes)
         <p><strong>Note from our admissions team:</strong></p>

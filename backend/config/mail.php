@@ -21,6 +21,6 @@ return [
     // config override reads from there instead of purely from env.
     'from' => [
         'address' => env('MAIL_FROM_ADDRESS', 'noreply@pnknowledgecampus.edu'),
-        'name' => env('MAIL_FROM_NAME', 'PN Knowledge Campus'),
+        'name' => env('MAIL_FROM_NAME', 'PNK Global Campus'),
     ],
 ];

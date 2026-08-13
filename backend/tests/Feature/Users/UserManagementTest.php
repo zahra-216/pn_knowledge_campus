@@ -36,8 +36,8 @@ class UserManagementTest extends TestCase
         $response = $this->actingAs($superAdmin)->postJson('/api/v1/admin/users', [
             'name' => 'New Editor',
             'email' => 'editor@example.com',
-            'password' => 'a-strong-password',
-            'password_confirmation' => 'a-strong-password',
+            'password' => 'A-Strong-Password9',
+            'password_confirmation' => 'A-Strong-Password9',
             'role' => 'Content Editor',
         ]);
 
@@ -52,7 +52,7 @@ class UserManagementTest extends TestCase
 
         $this->actingAs($administrator)->getJson('/api/v1/admin/users')->assertForbidden();
         $this->actingAs($administrator)->postJson('/api/v1/admin/users', [
-            'name' => 'Nope', 'email' => 'nope@example.com', 'password' => 'whatever12', 'password_confirmation' => 'whatever12', 'role' => 'Marketing',
+            'name' => 'Nope', 'email' => 'nope@example.com', 'password' => 'Whatever-12', 'password_confirmation' => 'Whatever-12', 'role' => 'Marketing',
         ])->assertForbidden();
     }
 
@@ -63,8 +63,8 @@ class UserManagementTest extends TestCase
         $this->actingAs($superAdmin)->postJson('/api/v1/admin/users', [
             'name' => 'Bad Role',
             'email' => 'badrole@example.com',
-            'password' => 'a-strong-password',
-            'password_confirmation' => 'a-strong-password',
+            'password' => 'A-Strong-Password9',
+            'password_confirmation' => 'A-Strong-Password9',
             'role' => 'Not A Real Role',
         ])->assertUnprocessable()->assertJsonValidationErrors(['role']);
     }
@@ -126,7 +126,31 @@ class UserManagementTest extends TestCase
         User::factory()->create(['email' => 'taken@example.com']);
 
         $this->actingAs($superAdmin)->postJson('/api/v1/admin/users', [
-            'name' => 'Dup', 'email' => 'taken@example.com', 'password' => 'a-strong-password', 'password_confirmation' => 'a-strong-password', 'role' => 'Marketing',
+            'name' => 'Dup', 'email' => 'taken@example.com', 'password' => 'A-Strong-Password9', 'password_confirmation' => 'A-Strong-Password9', 'role' => 'Marketing',
         ])->assertUnprocessable()->assertJsonValidationErrors(['email']);
+    }
+
+    /** Audit fix (Medium remediation) — "revoke all sessions" incident-response action. */
+    public function test_super_admin_can_revoke_all_of_a_users_sessions(): void
+    {
+        $superAdmin = $this->userWithRole('Super Admin');
+        $staff = $this->userWithRole('Marketing');
+        $staff->createToken('device-one');
+        $staff->createToken('device-two');
+        $this->assertSame(2, $staff->tokens()->count());
+
+        $this->actingAs($superAdmin)->postJson("/api/v1/admin/users/{$staff->id}/revoke-tokens")->assertOk();
+
+        $this->assertSame(0, $staff->fresh()->tokens()->count());
+    }
+
+    public function test_administrator_cannot_revoke_sessions(): void
+    {
+        $administrator = $this->userWithRole('Administrator');
+        $staff = $this->userWithRole('Marketing');
+        $staff->createToken('device-one');
+
+        $this->actingAs($administrator)->postJson("/api/v1/admin/users/{$staff->id}/revoke-tokens")->assertForbidden();
+        $this->assertSame(1, $staff->tokens()->count());
     }
 }

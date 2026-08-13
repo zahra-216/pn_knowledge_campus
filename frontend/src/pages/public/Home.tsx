@@ -1,35 +1,52 @@
-import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, CalendarDays, GraduationCap, Landmark } from "lucide-react";
 import { usePublicDetail } from "@/hooks/usePublicDetail";
 import { usePublicSettings } from "@/hooks/usePublicSettings";
 import { useResolvedMedia } from "@/hooks/useResolvedMedia";
 import { useSeoHead } from "@/hooks/useSeoHead";
 import { ENDPOINTS } from "@/lib/endpoints";
+import { cn } from "@/utils/cn";
 import { AsyncState } from "@/components/public/AsyncState";
 import { HeroSlider } from "@/components/public/HeroSlider";
-import { ContentCard } from "@/components/public/ContentCard";
+import { SmartLink } from "@/components/public/SmartLink";
+import { Container } from "@/components/public/Container";
+import { SectionHeading } from "@/components/public/SectionHeading";
+import { Reveal } from "@/components/public/Reveal";
+import { StatementBand } from "@/components/public/StatementBand";
 import type { HomepageContentSection, HeroSlide, Testimonial, Partner } from "@/types/homepage";
 import type { Faculty } from "@/types/faculty";
 import type { Course } from "@/types/course";
 import type { NewsArticle } from "@/types/news";
 import type { CampusEvent } from "@/types/event";
 
-const SECTION_TITLE: Record<string, string> = {
-  faculties: "Our Faculties",
-  featured_courses: "Featured Courses",
-  latest_news: "Latest News",
-  upcoming_events: "Upcoming Events",
-};
+function formatDate(value: string | null): string {
+  if (!value) return "";
+  return new Date(value).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
+}
 
+function metaLine(parts: (string | null | undefined)[]): string {
+  return parts.filter(Boolean).join(" · ");
+}
+
+/**
+ * Public Site Redesign, Stage 1 — the homepage is the new visual
+ * reference standard for the site. Same data contract as before (the
+ * Homepage Builder's ordered, independently enabled `sections` list from
+ * GET /homepage) and the same `useSeoHead` call — only the presentation
+ * per `section_key` changed. Inner listing/detail pages are untouched in
+ * this stage, so this file deliberately does not reuse `ContentCard`
+ * (shared with Courses/Faculties/Blog/News/Events) — the bespoke sections
+ * below are homepage-only.
+ */
 export function Home() {
   const { data: sections, isLoading, error } = usePublicDetail<HomepageContentSection[]>(ENDPOINTS.homepage.public);
   const { settings } = usePublicSettings();
 
-  const campusName = (settings.campus_name as string) || "PN Knowledge Campus";
+  const campusName = (settings.campus_name as string) || "PNK Global Campus";
 
   useSeoHead({
-    title: campusName,
+    title: "Home",
     description: settings.default_meta_description as string | undefined,
     canonicalPath: "/",
     jsonLd: {
@@ -65,62 +82,16 @@ function HomeSection({ section }: { section: HomepageContentSection }) {
       return <WelcomeSection content={section.content ?? {}} />;
 
     case "faculties":
-      return (
-        <ListSection title={SECTION_TITLE.faculties}>
-          {(section.items as Faculty[]).map((f) => (
-            <ContentCard key={f.id} to={`/faculties/${f.slug}`} image={f.banner_url} title={f.name} excerpt={f.short_description} />
-          ))}
-        </ListSection>
-      );
+      return <FacultiesSection items={(section.items as Faculty[]) ?? []} />;
 
     case "featured_courses":
-      return (
-        <ListSection title={SECTION_TITLE.featured_courses} tone="alt">
-          {(section.items as Course[]).map((c) => (
-            <ContentCard
-              key={c.id}
-              to={`/courses/${c.slug}`}
-              image={c.featured_image_url}
-              title={c.course_name}
-              meta={c.faculty.name}
-              excerpt={c.overview}
-              badge={c.duration}
-            />
-          ))}
-        </ListSection>
-      );
+      return <ProgrammesSection items={(section.items as Course[]) ?? []} />;
 
     case "latest_news":
-      return (
-        <ListSection title={SECTION_TITLE.latest_news} viewAllTo="/news">
-          {(section.items as NewsArticle[]).map((n) => (
-            <ContentCard
-              key={n.id}
-              to={`/news/${n.slug}`}
-              image={n.featured_image_url}
-              title={n.title}
-              meta={n.category?.name}
-              excerpt={n.excerpt}
-            />
-          ))}
-        </ListSection>
-      );
+      return <NewsSection items={(section.items as NewsArticle[]) ?? []} />;
 
     case "upcoming_events":
-      return (
-        <ListSection title={SECTION_TITLE.upcoming_events} tone="alt" viewAllTo="/events">
-          {(section.items as CampusEvent[]).map((ev) => (
-            <ContentCard
-              key={ev.id}
-              to={`/events/${ev.slug}`}
-              image={ev.featured_image_url}
-              title={ev.title}
-              meta={new Date(ev.starts_at).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" })}
-              excerpt={ev.venue}
-            />
-          ))}
-        </ListSection>
-      );
+      return <EventsSection items={(section.items as CampusEvent[]) ?? []} />;
 
     case "testimonials":
       return <TestimonialsSection items={(section.items as Testimonial[]) ?? []} />;
@@ -146,145 +117,418 @@ function WelcomeSection({ content }: { content: Record<string, unknown> }) {
   const mediaId = content.media_id as number | undefined;
   const media = useResolvedMedia([mediaId]);
   const image = mediaId ? media.get(mediaId) : undefined;
+  const heading = content.heading as string | undefined;
+  const body = content.body as string | undefined;
 
-  if (!content.heading && !content.body) return null;
+  if (!heading && !body) return null;
 
   return (
-    <section className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:items-center lg:px-8">
-      {image && <img src={image.url} alt="" loading="lazy" decoding="async" className="w-full rounded-lg object-cover" />}
-      <div>
-        {content.heading ? (
-          <h2 className="font-display text-h2 font-semibold text-[color:var(--color-text)]">{content.heading as string}</h2>
-        ) : null}
-        {content.body ? <p className="mt-4 whitespace-pre-line text-body text-neutral-500">{content.body as string}</p> : null}
-      </div>
+    <section className="py-[var(--space-md)]">
+      <Container size="wide" className="grid gap-12 lg:grid-cols-12 lg:items-center">
+        {image && (
+          <Reveal className={image ? "lg:col-span-6" : "hidden"}>
+            <div className="aspect-[4/3] w-full overflow-hidden bg-[color:var(--pub-paper-tint)]">
+              <img src={image.url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+            </div>
+          </Reveal>
+        )}
+        <Reveal delay={90} className={cn("flex flex-col gap-5", image ? "lg:col-span-6" : "lg:col-span-8")}>
+          {heading && <SectionHeading eyebrow="About" title={heading} />}
+          {body && <p className="whitespace-pre-line text-body-lg text-[color:var(--pub-muted)]">{body}</p>}
+        </Reveal>
+      </Container>
     </section>
   );
 }
 
-function WhyChooseUsSection({ items }: { items: { icon?: string; title: string; text: string }[] }) {
+function ProgrammesSection({ items }: { items: Course[] }) {
   if (items.length === 0) return null;
+  const [lead, ...rest] = items;
+
   return (
-    <section className="bg-[color:var(--color-surface)] px-4 py-16 sm:px-6 lg:px-8">
-      <div className="mx-auto grid max-w-6xl gap-8 sm:grid-cols-2 lg:grid-cols-3">
-        {items.map((item, i) => (
-          <div key={i} className="flex flex-col items-center gap-3 text-center">
-            {item.icon && <span className="text-h1">{item.icon}</span>}
-            <h3 className="font-display text-h4 font-semibold text-[color:var(--color-text)]">{item.title}</h3>
-            <p className="text-body-sm text-neutral-500">{item.text}</p>
-          </div>
-        ))}
-      </div>
+    <section className="py-[var(--space-md)]">
+      <Container size="wide" className="flex flex-col gap-10">
+        <Reveal>
+          <SectionHeading eyebrow="Programmes" title="Featured Courses" viewAllTo="/courses" viewAllLabel="View all courses" />
+        </Reveal>
+
+        <div className="grid gap-10 lg:grid-cols-12">
+          <Reveal className="lg:col-span-6">
+            <Link to={`/courses/${lead.slug}`} className="group flex h-full flex-col">
+              <div className="relative aspect-[16/10] w-full overflow-hidden bg-[color:var(--pub-paper-tint)]">
+                {lead.featured_image_url ? (
+                  <img
+                    src={lead.featured_image_url}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-[color:var(--pub-muted)]">
+                    <GraduationCap className="h-10 w-10" aria-hidden="true" />
+                  </div>
+                )}
+              </div>
+              <div className="mt-5 flex flex-col gap-2">
+                <p className="text-caption font-semibold uppercase tracking-wide text-gold">{metaLine([lead.faculty?.name, lead.duration])}</p>
+                <h3 className="font-display text-h3 font-medium text-[color:var(--pub-ink)] group-hover:text-gold dark:text-white">
+                  {lead.course_name}
+                </h3>
+                <p className="line-clamp-2 max-w-xl text-body text-[color:var(--pub-muted)]">{lead.overview}</p>
+                <span className="mt-1 inline-flex items-center gap-2 text-body-sm font-semibold text-[color:var(--pub-ink)] dark:text-white">
+                  Explore programme <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </span>
+              </div>
+            </Link>
+          </Reveal>
+
+          {rest.length > 0 && (
+            <Reveal delay={100} className="lg:col-span-6">
+              <ul className="flex flex-col divide-y divide-[color:var(--pub-line)] border-t border-[color:var(--pub-line)]">
+                {rest.map((course) => (
+                  <li key={course.id}>
+                    <Link to={`/courses/${course.slug}`} className="group flex items-center gap-4 py-5">
+                      <div className="h-16 w-20 flex-none overflow-hidden bg-[color:var(--pub-paper-tint)]">
+                        {course.featured_image_url && (
+                          <img src={course.featured_image_url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                        )}
+                      </div>
+                      <div className="flex min-w-0 flex-col gap-1">
+                        <p className="truncate text-caption font-medium uppercase tracking-wide text-[color:var(--pub-muted)]">
+                          {course.faculty?.name}
+                        </p>
+                        <p className="truncate font-display text-h4 font-medium text-[color:var(--pub-ink)] group-hover:text-gold dark:text-white">
+                          {course.course_name}
+                        </p>
+                      </div>
+                      <ArrowRight className="ml-auto h-4 w-4 flex-none text-[color:var(--pub-muted)] transition-transform group-hover:translate-x-1 group-hover:text-gold" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </Reveal>
+          )}
+        </div>
+      </Container>
     </section>
   );
 }
 
-function StatisticsSection({ items }: { items: { label: string; value: string }[] }) {
+function FacultiesSection({ items }: { items: Faculty[] }) {
   if (items.length === 0) return null;
+
   return (
-    <section className="bg-navy px-4 py-14 text-white sm:px-6 lg:px-8">
-      <div className="mx-auto grid max-w-5xl grid-cols-2 gap-6 sm:grid-cols-4">
-        {items.map((item, i) => (
-          <div key={i} className="flex flex-col items-center text-center">
-            <span className="font-display text-h1 font-semibold">{item.value}</span>
-            <span className="mt-1 text-body-sm text-white/70">{item.label}</span>
-          </div>
-        ))}
-      </div>
+    <section className="bg-[color:var(--pub-paper-tint)] py-[var(--space-md)]">
+      <Container size="wide" className="flex flex-col gap-10">
+        <Reveal>
+          <SectionHeading eyebrow="Academics" title="Our Faculties" viewAllTo="/faculties" viewAllLabel="View all faculties" />
+        </Reveal>
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          {items.map((faculty, i) => {
+            const image = faculty.banner_url ?? faculty.icon_url;
+            return (
+              <Reveal key={faculty.id} delay={i * 70}>
+                <Link to={`/faculties/${faculty.slug}`} className="group flex h-full flex-col">
+                  <div className="relative aspect-[3/4] w-full overflow-hidden bg-[color:var(--pub-paper)]">
+                    {image ? (
+                      <img
+                        src={image}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-[color:var(--pub-muted)]">
+                        <Landmark className="h-8 w-8" aria-hidden="true" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-4 flex flex-col gap-1">
+                    <h3 className="font-display text-h4 font-medium text-[color:var(--pub-ink)] group-hover:text-gold dark:text-white">
+                      {faculty.name}
+                    </h3>
+                    {faculty.short_description && (
+                      <p className="line-clamp-2 text-body-sm text-[color:var(--pub-muted)]">{faculty.short_description}</p>
+                    )}
+                  </div>
+                </Link>
+              </Reveal>
+            );
+          })}
+        </div>
+      </Container>
+    </section>
+  );
+}
+
+function NewsSection({ items }: { items: NewsArticle[] }) {
+  if (items.length === 0) return null;
+  const [lead, ...rest] = items;
+
+  return (
+    <section className="py-[var(--space-md)]">
+      <Container size="wide" className="flex flex-col gap-10">
+        <Reveal>
+          <SectionHeading eyebrow="Newsroom" title="Latest News" viewAllTo="/news" />
+        </Reveal>
+
+        <div className="grid gap-10 lg:grid-cols-12">
+          <Reveal className="lg:col-span-5">
+            <Link to={`/news/${lead.slug}`} className="group flex h-full flex-col">
+              <div className="relative aspect-[4/3] w-full overflow-hidden bg-[color:var(--pub-paper-tint)]">
+                {lead.featured_image_url && (
+                  <img
+                    src={lead.featured_image_url}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                  />
+                )}
+              </div>
+              <div className="mt-5 flex flex-col gap-2">
+                <p className="text-caption font-semibold uppercase tracking-wide text-gold">
+                  {metaLine([formatDate(lead.published_at), lead.category?.name])}
+                </p>
+                <h3 className="font-display text-h3 font-medium text-[color:var(--pub-ink)] group-hover:text-gold dark:text-white">{lead.title}</h3>
+                {lead.excerpt && <p className="line-clamp-2 text-body text-[color:var(--pub-muted)]">{lead.excerpt}</p>}
+              </div>
+            </Link>
+          </Reveal>
+
+          {rest.length > 0 && (
+            <Reveal delay={100} className="lg:col-span-7">
+              <ul className="flex flex-col divide-y divide-[color:var(--pub-line)] border-t border-[color:var(--pub-line)]">
+                {rest.map((n) => (
+                  <li key={n.id}>
+                    <Link to={`/news/${n.slug}`} className="group flex items-center justify-between gap-6 py-5">
+                      <div className="flex min-w-0 flex-col gap-1.5">
+                        <p className="text-caption font-medium uppercase tracking-wide text-[color:var(--pub-muted)]">
+                          {metaLine([formatDate(n.published_at), n.category?.name])}
+                        </p>
+                        <p className="truncate font-display text-h4 font-medium text-[color:var(--pub-ink)] group-hover:text-gold dark:text-white">
+                          {n.title}
+                        </p>
+                      </div>
+                      <ArrowRight className="h-4 w-4 flex-none text-[color:var(--pub-muted)] transition-transform group-hover:translate-x-1 group-hover:text-gold" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </Reveal>
+          )}
+        </div>
+      </Container>
+    </section>
+  );
+}
+
+function EventsSection({ items }: { items: CampusEvent[] }) {
+  if (items.length === 0) return null;
+
+  return (
+    <section className="bg-[color:var(--pub-paper-tint)] py-[var(--space-md)]">
+      <Container size="wide" className="flex flex-col gap-10">
+        <Reveal>
+          <SectionHeading eyebrow="What's On" title="Upcoming Events" viewAllTo="/events" />
+        </Reveal>
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          {items.map((ev, i) => {
+            const date = new Date(ev.starts_at);
+            return (
+              <Reveal key={ev.id} delay={i * 70}>
+                <Link to={`/events/${ev.slug}`} className="group flex h-full flex-col">
+                  <div className="relative aspect-[16/10] w-full overflow-hidden bg-[color:var(--pub-paper)]">
+                    {ev.featured_image_url ? (
+                      <img
+                        src={ev.featured_image_url}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-[color:var(--pub-muted)]">
+                        <CalendarDays className="h-8 w-8" aria-hidden="true" />
+                      </div>
+                    )}
+                    <div className="absolute left-0 top-0 flex flex-col items-center bg-[color:var(--pub-ink)] px-4 py-2 leading-none text-white">
+                      <span className="font-display text-h3 font-medium tabular-nums">{date.getDate()}</span>
+                      <span className="mt-0.5 text-caption uppercase tracking-wide text-white/70">
+                        {date.toLocaleDateString(undefined, { month: "short" })}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex flex-col gap-1.5">
+                    <p className="text-caption font-medium uppercase tracking-wide text-[color:var(--pub-muted)]">
+                      {date.toLocaleDateString(undefined, { weekday: "long", hour: "numeric", minute: "2-digit" })}
+                    </p>
+                    <h3 className="font-display text-h4 font-medium text-[color:var(--pub-ink)] group-hover:text-gold dark:text-white">{ev.title}</h3>
+                    {ev.venue && <p className="text-body-sm text-[color:var(--pub-muted)]">{ev.is_online ? "Online" : ev.venue}</p>}
+                  </div>
+                </Link>
+              </Reveal>
+            );
+          })}
+        </div>
+      </Container>
     </section>
   );
 }
 
 function TestimonialsSection({ items }: { items: Testimonial[] }) {
-  if (items.length === 0) return null;
+  const ordered = [...items].sort((a, b) => Number(b.is_featured) - Number(a.is_featured));
+  const [rawIndex, setIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const hasMultiple = ordered.length > 1;
+
+  // Auto-advances every 6s like the hero slider, pausing on hover and
+  // restarting its countdown on any manual dot click (see HeroSlider.tsx).
+  useEffect(() => {
+    if (!hasMultiple || paused) return;
+    const timer = setTimeout(() => setIndex((i) => i + 1), 6000);
+    return () => clearTimeout(timer);
+  }, [rawIndex, paused, hasMultiple]);
+
+  if (ordered.length === 0) return null;
+  const index = rawIndex % ordered.length;
+  const t = ordered[index];
+
   return (
-    <ListSection title="What Our Students Say" columns={2}>
-      {items.map((t) => (
-        <blockquote key={t.id} className="rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-6">
-          <p className="text-body italic text-[color:var(--color-text)]">&ldquo;{t.content}&rdquo;</p>
-          <footer className="mt-4 flex items-center gap-3">
-            {t.photo_url && <img src={t.photo_url} alt="" loading="lazy" decoding="async" className="h-10 w-10 rounded-full object-cover" />}
+    <StatementBand
+      tone="tint"
+      containerSize="wide"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      <div className="grid gap-8 lg:grid-cols-12 lg:items-center lg:gap-10">
+        <p className="text-caption font-semibold uppercase tracking-[0.14em] text-gold lg:col-span-2">Student Voices</p>
+
+        <div className="flex flex-col gap-6 lg:col-span-8">
+          <blockquote className="text-balance font-display text-h2 font-normal italic text-[color:var(--pub-ink)] dark:text-white">
+            &ldquo;{t.content}&rdquo;
+          </blockquote>
+          <footer className="flex items-center gap-3">
+            {t.photo_url && <img src={t.photo_url} alt="" loading="lazy" decoding="async" className="h-12 w-12 rounded-full object-cover" />}
             <div>
-              <p className="text-body-sm font-semibold text-[color:var(--color-text)]">{t.name}</p>
-              {t.role_title && <p className="text-caption text-neutral-500">{t.role_title}</p>}
+              <p className="text-body-sm font-semibold text-[color:var(--pub-ink)] dark:text-white">{t.name}</p>
+              {t.role_title && <p className="text-caption text-[color:var(--pub-muted)]">{t.role_title}</p>}
             </div>
           </footer>
-        </blockquote>
-      ))}
-    </ListSection>
+        </div>
+
+        {ordered.length > 1 && (
+          <div className="flex gap-2 lg:col-span-2 lg:justify-end">
+            {ordered.map((item, i) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setIndex(i)}
+                aria-label={`Show testimonial from ${item.name}`}
+                aria-current={i === index}
+                className={cn("h-[3px] w-6 rounded-full transition-colors", i === index ? "bg-gold" : "bg-[color:var(--pub-line)]")}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </StatementBand>
   );
 }
 
 function PartnersSection({ items }: { items: Partner[] }) {
   if (items.length === 0) return null;
+
   return (
-    <section className="px-4 py-14 sm:px-6 lg:px-8">
-      <h2 className="mb-8 text-center font-display text-h2 font-semibold text-[color:var(--color-text)]">Our Partners</h2>
-      <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-10">
-        {items.map((p) =>
-          p.logo_url ? (
-            <a key={p.id} href={p.url ?? undefined} target="_blank" rel="noopener noreferrer">
-              <img src={p.logo_url} alt={p.name} loading="lazy" decoding="async" className="h-12 w-auto grayscale hover:grayscale-0" />
-            </a>
-          ) : (
-            <span key={p.id} className="text-body-sm text-neutral-500">
-              {p.name}
-            </span>
-          )
-        )}
-      </div>
+    <section className="py-[var(--space-sm)]">
+      <Container size="wide" className="flex flex-col items-center gap-8">
+        <p className="text-caption font-semibold uppercase tracking-[0.14em] text-[color:var(--pub-muted)]">In Partnership With</p>
+        <div className="flex flex-wrap items-center justify-center gap-x-14 gap-y-8">
+          {items.map((p) =>
+            p.logo_url ? (
+              <a
+                key={p.id}
+                href={p.url ?? undefined}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="opacity-60 grayscale transition-all duration-300 hover:opacity-100 hover:grayscale-0"
+              >
+                <img src={p.logo_url} alt={p.name} loading="lazy" decoding="async" className="h-9 w-auto" />
+              </a>
+            ) : (
+              <span key={p.id} className="text-body-sm text-[color:var(--pub-muted)]">
+                {p.name}
+              </span>
+            )
+          )}
+        </div>
+      </Container>
     </section>
   );
 }
 
 function CtaSection({ content }: { content: Record<string, unknown> }) {
   if (!content.heading) return null;
+
   return (
-    <section className="bg-gold/10 px-4 py-16 text-center sm:px-6 lg:px-8">
-      <div className="mx-auto flex max-w-2xl flex-col items-center gap-3">
-        <h2 className="font-display text-h2 font-semibold text-[color:var(--color-text)]">{content.heading as string}</h2>
-        {content.body ? <p className="text-body text-neutral-600">{content.body as string}</p> : null}
+    <StatementBand tone="tint" containerSize="narrow">
+      <div className="flex flex-col items-center gap-4 text-center">
+        <h2 className="text-balance font-display text-h1 font-medium text-[color:var(--pub-ink)] dark:text-white">
+          {content.heading as string}
+        </h2>
+        {content.body ? <p className="max-w-xl text-body-lg text-[color:var(--pub-muted)]">{content.body as string}</p> : null}
         {content.button_url && content.button_label ? (
-          <Link
+          <SmartLink
             to={content.button_url as string}
-            className="mt-2 inline-flex h-11 items-center rounded bg-navy px-6 text-body-sm font-semibold text-white hover:bg-navy-light"
+            className="mt-2 inline-flex h-12 items-center rounded-sm bg-gold px-7 text-body-sm font-semibold text-navy-dark transition-colors duration-200 hover:bg-gold-tint"
           >
             {content.button_label as string}
-          </Link>
+          </SmartLink>
         ) : null}
       </div>
+    </StatementBand>
+  );
+}
+
+function WhyChooseUsSection({ items }: { items: { icon?: string; title: string; text: string }[] }) {
+  if (items.length === 0) return null;
+
+  return (
+    <section className="py-[var(--space-md)]">
+      <Container size="wide">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3 lg:gap-x-12">
+          {items.map((item, i) => (
+            <Reveal key={i} delay={i * 70} className="flex flex-col gap-3 border-t border-[color:var(--pub-line)] pt-6">
+              {item.icon && (
+                <span className="text-h2" aria-hidden="true">
+                  {item.icon}
+                </span>
+              )}
+              <h3 className="font-display text-h4 font-medium text-[color:var(--pub-ink)] dark:text-white">{item.title}</h3>
+              <p className="text-body-sm text-[color:var(--pub-muted)]">{item.text}</p>
+            </Reveal>
+          ))}
+        </div>
+      </Container>
     </section>
   );
 }
 
-function ListSection({
-  title,
-  viewAllTo,
-  tone = "default",
-  columns = 3,
-  children,
-}: {
-  title?: string;
-  viewAllTo?: string;
-  tone?: "default" | "alt";
-  columns?: 2 | 3;
-  children: ReactNode;
-}) {
+function StatisticsSection({ items }: { items: { label: string; value: string }[] }) {
+  if (items.length === 0) return null;
+
   return (
-    <section className={tone === "alt" ? "bg-[color:var(--color-surface)] px-4 py-16 sm:px-6 lg:px-8" : "px-4 py-16 sm:px-6 lg:px-8"}>
-      <div className="mx-auto max-w-7xl">
-        {title && (
-          <div className="mb-8 flex items-center justify-between">
-            <h2 className="font-display text-h2 font-semibold text-[color:var(--color-text)]">{title}</h2>
-            {viewAllTo && (
-              <Link to={viewAllTo} className="flex items-center gap-1 text-body-sm font-semibold text-navy hover:underline dark:text-gold">
-                View all <ArrowRight className="h-4 w-4" />
-              </Link>
-            )}
-          </div>
-        )}
-        <div className={`grid gap-6 ${columns === 2 ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-3"}`}>{children}</div>
+    <StatementBand tone="ink">
+      <div className="grid grid-cols-2 gap-10 lg:grid-cols-4">
+        {items.map((item, i) => (
+          <Reveal key={i} delay={i * 70} className="flex flex-col gap-1">
+            <span className="font-display text-stat font-medium tabular-nums">{item.value}</span>
+            <span className="text-body-sm text-white/60">{item.label}</span>
+          </Reveal>
+        ))}
       </div>
-    </section>
+    </StatementBand>
   );
 }

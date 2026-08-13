@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Download as DownloadIcon, FileText } from "lucide-react";
+import { Download as DownloadIcon, FileText, Lock } from "lucide-react";
 import { usePublicDetail } from "@/hooks/usePublicDetail";
 import { useSeoHead } from "@/hooks/useSeoHead";
 import { ENDPOINTS } from "@/lib/endpoints";
 import { AsyncState } from "@/components/public/AsyncState";
 import { Breadcrumb } from "@/components/public/Breadcrumb";
+import { RequestDownloadModal } from "@/components/public/RequestDownloadModal";
 import { Card, EmptyState } from "@/components/ui";
 import type { Download, DownloadCategory } from "@/types/download";
 
@@ -18,6 +19,7 @@ function formatSize(bytes: number | null): string | null {
 /** The Downloads catalog (Milestone 18) — Prospectus, Application Forms, Brochures, and other public documents. */
 export function Downloads() {
   const [categorySlug, setCategorySlug] = useState("");
+  const [requestTarget, setRequestTarget] = useState<Download | null>(null);
 
   const { data: categories } = usePublicDetail<DownloadCategory[]>(ENDPOINTS.downloadCategories.public);
 
@@ -57,7 +59,7 @@ export function Downloads() {
                   {d.description && <p className="mt-1 text-body-sm text-neutral-500">{d.description}</p>}
                   {formatSize(d.file_size) && <p className="mt-1 text-caption text-neutral-400">{formatSize(d.file_size)}</p>}
                 </div>
-                {d.file_url && (
+                {d.file_url ? (
                   <a
                     href={d.file_url}
                     download
@@ -67,12 +69,31 @@ export function Downloads() {
                   >
                     <DownloadIcon className="h-4 w-4" /> Download
                   </a>
+                ) : (
+                  d.requires_inquiry && (
+                    <button
+                      type="button"
+                      onClick={() => setRequestTarget(d)}
+                      className="flex h-10 flex-shrink-0 items-center gap-2 rounded bg-navy px-4 text-body-sm font-semibold text-white hover:bg-navy-light"
+                    >
+                      <Lock className="h-4 w-4" /> Get Download
+                    </button>
+                  )
                 )}
               </Card>
             ))}
           </div>
         </AsyncState>
       </div>
+
+      {requestTarget && (
+        <RequestDownloadModal
+          open
+          onClose={() => setRequestTarget(null)}
+          downloadId={requestTarget.id}
+          downloadTitle={requestTarget.title}
+        />
+      )}
     </div>
   );
 }

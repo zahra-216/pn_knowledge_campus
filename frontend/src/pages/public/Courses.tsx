@@ -7,11 +7,17 @@ import { useSeoHead } from "@/hooks/useSeoHead";
 import { ENDPOINTS } from "@/lib/endpoints";
 import { AsyncState } from "@/components/public/AsyncState";
 import { ContentCard } from "@/components/public/ContentCard";
-import { Pagination } from "@/components/public/Pagination";
 import { Breadcrumb } from "@/components/public/Breadcrumb";
-import { EmptyState } from "@/components/ui";
-import type { Course, CourseLookup } from "@/types/course";
+import { EmptyState, Pagination } from "@/components/ui";
+import type { Course, CourseCategory, CourseLookup } from "@/types/course";
 import type { Faculty } from "@/types/faculty";
+
+/** Flattens the category tree into a single list — parent then its own
+ * children immediately after — so the filter dropdown can show both
+ * levels without needing its own nested `<optgroup>` markup. */
+function flattenCategories(categories: CourseCategory[]): CourseCategory[] {
+  return categories.flatMap((c) => [c, ...(c.children ?? [])]);
+}
 
 export function Courses() {
   const [params, setParams] = useSearchParams();
@@ -21,6 +27,7 @@ export function Courses() {
   const { data: faculties } = usePublicDetail<Faculty[]>(ENDPOINTS.faculties.publicList);
   const { data: levels } = usePublicDetail<CourseLookup[]>(ENDPOINTS.courseLevels.public);
   const { data: modes } = usePublicDetail<CourseLookup[]>(ENDPOINTS.courseModes.public);
+  const { data: categories } = usePublicDetail<CourseCategory[]>(ENDPOINTS.courseCategories.public);
 
   const { items: courses, meta, isLoading, error } = usePublicList<Course>(ENDPOINTS.courses.publicList, {
     page,
@@ -28,6 +35,7 @@ export function Courses() {
     "filter[faculty]": params.get("faculty") ?? undefined,
     "filter[level]": params.get("level") ?? undefined,
     "filter[mode]": params.get("mode") ?? undefined,
+    "filter[category]": params.get("category") ?? undefined,
     search: params.get("search") ?? undefined,
   });
 
@@ -80,6 +88,12 @@ export function Courses() {
           onChange={(v) => updateFilter("mode", v)}
           placeholder="All Modes"
           options={(modes ?? []).map((m) => ({ value: m.slug, label: m.name }))}
+        />
+        <FilterSelect
+          value={params.get("category") ?? ""}
+          onChange={(v) => updateFilter("category", v)}
+          placeholder="All Categories"
+          options={flattenCategories(categories ?? []).map((c) => ({ value: c.slug, label: c.name }))}
         />
       </form>
 

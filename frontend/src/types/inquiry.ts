@@ -18,6 +18,20 @@ export interface InquiryPayload {
   international_applicant?: boolean;
 }
 
+/** Matches InquiryController::assignableStaff()'s plain {id, name} shape. */
+export interface AssignableStaffMember {
+  id: number;
+  name: string;
+}
+
+/** Matches InquiryNoteResource — audit fix (High remediation), a staff follow-up note thread. */
+export interface InquiryNote {
+  id: number;
+  body: string;
+  author: { id: number; name: string } | null;
+  created_at: string;
+}
+
 /** Matches InquiryAdminResource — the Inquiry Management admin inbox. */
 export interface AdminInquiry {
   id: number;
@@ -29,5 +43,7 @@ export interface AdminInquiry {
   course: { id: number; name: string; slug: string } | null;
   international_applicant: boolean;
   status: InquiryStatus;
+  assigned_to: { id: number; name: string } | null;
+  notes: InquiryNote[];
   created_at: string;
 }

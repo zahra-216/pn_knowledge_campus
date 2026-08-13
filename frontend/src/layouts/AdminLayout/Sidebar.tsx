@@ -94,7 +94,12 @@ const NAV_ITEMS: NavItem[] = [
   },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  /** Called on every real navigation — lets the mobile drawer close itself, mirroring SiteHeader's mobile nav. */
+  onNavigate?: () => void;
+}
+
+export function Sidebar({ onNavigate }: SidebarProps = {}) {
   const [expanded, setExpanded] = useState<string | null>(null);
 
   return (
@@ -114,6 +119,7 @@ export function Sidebar() {
                 key={item.label}
                 to={item.to}
                 end
+                onClick={onNavigate}
                 className={({ isActive }) =>
                   cn(
                     "flex items-center gap-3 rounded px-3 py-2 text-body-sm transition-colors",
@@ -150,6 +156,7 @@ export function Sidebar() {
                       <NavLink
                         key={child.label}
                         to={child.to}
+                        onClick={onNavigate}
                         className={({ isActive }) =>
                           cn(
                             "py-1 text-caption transition-colors",

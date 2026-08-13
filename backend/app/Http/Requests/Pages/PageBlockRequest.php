@@ -54,7 +54,7 @@ class PageBlockRequest extends FormRequest
                 'data.alignment' => ['nullable', Rule::in(['left', 'center', 'right'])],
             ],
             'text', 'rich_text' => [
-                'data.body' => ['required', 'string'],
+                'data.body' => ['required', 'string', 'max:50000'],
             ],
             'image' => [
                 'data.media_id' => ['required', 'integer', 'exists:media,id'],

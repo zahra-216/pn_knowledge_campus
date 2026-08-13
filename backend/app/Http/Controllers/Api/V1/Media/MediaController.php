@@ -8,6 +8,7 @@ use App\Http\Requests\Media\MediaUpdateRequest;
 use App\Http\Requests\Media\MediaUploadRequest;
 use App\Http\Resources\MediaResource;
 use App\Models\Media;
+use App\Models\MediaLibrary;
 use App\Services\MediaUploadService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -19,12 +20,15 @@ use Illuminate\Support\Facades\Gate;
  * API Design, Section 8.6. SRS Section 7.3 — folder-based organization,
  * search by filename/tag/alt text, reusable across modules.
  *
- * The "409 if still attached to published content" delete guard from the
- * API Design document is not implemented yet: in Milestone 1 every media
- * row is owned by the internal MediaLibrary singleton, never by a real
- * content record with a publish state, so that check has nothing to
- * evaluate against until Milestone 2+ content models exist. It activates
- * naturally once media starts getting re-parented onto real content.
+ * destroy()'s "409 if still attached to content" guard (audit fix,
+ * Medium remediation) — every upload starts out owned by the internal
+ * MediaLibrary singleton (see that model's own docblock) until a real
+ * content model (Course, Faculty, Page, ...) claims it via
+ * `$media->move()`/`moveKeepingCustomFields()`, which repoints
+ * `model_type`/`model_id` at that model instead. A media row whose
+ * owner is no longer MediaLibrary is actively serving as someone's
+ * featured image/icon/banner/etc. — deleting it out from under that
+ * content silently breaks whatever page renders it.
  */
 class MediaController extends Controller
 {
@@ -97,9 +101,19 @@ class MediaController extends Controller
         return ApiResponse::success(new MediaResource($medium));
     }
 
-    public function destroy(Media $medium): Response
+    public function destroy(Media $medium): Response|JsonResponse
     {
         Gate::authorize('delete', Media::class);
+
+        $unattachedType = (new MediaLibrary)->getMorphClass();
+
+        if ($medium->model_type !== $unattachedType) {
+            return ApiResponse::error(
+                'This file cannot be deleted while it is still attached to content.',
+                409,
+                ['conflict' => ['type' => 'has_dependent_records', 'related_resource' => $medium->model_type, 'count' => 1]]
+            );
+        }
 
         $medium->delete();
 

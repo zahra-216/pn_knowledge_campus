@@ -29,4 +29,17 @@ class ApplicationPolicy
     {
         return $user->can('applications.export');
     }
+
+    /**
+     * Audit fix (Low remediation) — narrowly scoped to abandoned drafts
+     * only (enforced in ApplicationController::destroy(), not here,
+     * since a Policy checks "can this user act on this resource type",
+     * not resource state). Reuses applications.review rather than a new
+     * permission — the same Super Admin/Administrator/Admissions roles
+     * already trusted to decide an application's outcome.
+     */
+    public function delete(User $user): bool
+    {
+        return $user->can('applications.review');
+    }
 }

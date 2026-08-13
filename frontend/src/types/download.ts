@@ -28,9 +28,21 @@ export interface Download {
   file_type: string | null;
   order: number;
   is_active: boolean;
+  /** Audit fix (High remediation) — see DownloadController::requestDownload()'s docblock. */
+  requires_inquiry: boolean;
+  download_count: number;
 }
 
-export type DownloadPayload = Partial<Pick<Download, "title" | "description" | "order" | "is_active">> & {
+export type DownloadPayload = Partial<
+  Pick<Download, "title" | "description" | "order" | "is_active" | "requires_inquiry">
+> & {
   category_id?: number | null;
   media_id?: number | null;
 };
+
+/** Matches POST /downloads/{id}/request's { data: { url } } response. */
+export interface DownloadRequestPayload {
+  name?: string;
+  email?: string;
+  phone?: string;
+}

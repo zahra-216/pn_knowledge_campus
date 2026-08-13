@@ -179,6 +179,10 @@ export const ENDPOINTS = {
   downloads: {
     admin: (id?: number) => (id ? `/admin/downloads/${id}` : "/admin/downloads"),
     publicList: "/downloads",
+    request: (id: number) => `/downloads/${id}/request`,
+    attach: (id: number) => `/admin/downloads/${id}/attach`,
+    detach: (id: number, attachableType: string, attachableId: number) =>
+      `/admin/downloads/${id}/attach/${attachableType}/${attachableId}`,
   },
   seo: {
     admin: (type: string, id: number) => `/admin/seo/${type}/${id}`,
@@ -191,6 +195,9 @@ export const ENDPOINTS = {
     adminExport: "/admin/inquiries/export",
     adminShow: (id: number) => `/admin/inquiries/${id}`,
     adminStatus: (id: number) => `/admin/inquiries/${id}/status`,
+    adminAssign: (id: number) => `/admin/inquiries/${id}/assign`,
+    adminNotes: (id: number) => `/admin/inquiries/${id}/notes`,
+    adminAssignableStaff: "/admin/inquiries/assignable-staff",
   },
   users: {
     admin: (id?: number) => (id ? `/admin/users/${id}` : "/admin/users"),
@@ -214,6 +221,7 @@ export const ENDPOINTS = {
     adminUnderReview: (id: number) => `/admin/applications/${id}/under-review`,
     adminApprove: (id: number) => `/admin/applications/${id}/approve`,
     adminReject: (id: number) => `/admin/applications/${id}/reject`,
+    adminPruneDrafts: "/admin/applications/drafts",
   },
   search: {
     results: (q: string, types?: string[]) => `/search?q=${encodeURIComponent(q)}${types?.length ? `&type=${types.join(",")}` : ""}`,

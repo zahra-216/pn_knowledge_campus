@@ -51,7 +51,12 @@ class EventSeeder extends Seeder
             'is_online' => $isOnline,
             'starts_at' => $startsAt,
             'ends_at' => $endsAt,
-            'description' => "<p>Details for {$title}.</p>",
+            // Audit fix (Medium remediation) — this field is a plain
+            // <Textarea> in the admin editor (EventDetailsTab.tsx), not a
+            // rich-text field; wrapping it in <p> tags here meant every
+            // event's description (and its meta description) showed
+            // literal, visible "<p>...</p>" tags rather than being parsed.
+            'description' => "Details for {$title}.",
             'status' => 'published',
         ]);
     }

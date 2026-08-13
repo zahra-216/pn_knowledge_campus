@@ -1,6 +1,6 @@
-import { Link } from "react-router-dom";
 import { useResolvedMedia } from "@/hooks/useResolvedMedia";
 import { Accordion } from "@/components/public/Accordion";
+import { SmartLink } from "@/components/public/SmartLink";
 import { cn } from "@/utils/cn";
 import { RICH_TEXT_CLASSNAME } from "@/utils/richText";
 import type {
@@ -74,12 +74,12 @@ function Block({ block, media }: { block: PageBlock; media: ReturnType<typeof us
             <h1 className="font-display text-h1 font-semibold">{data.heading}</h1>
             {data.subheading && <p className="max-w-2xl text-body-lg text-white/85">{data.subheading}</p>}
             {data.cta_url && data.cta_label && (
-              <Link
+              <SmartLink
                 to={data.cta_url}
                 className="mt-2 inline-flex h-11 items-center rounded bg-gold px-6 text-body-sm font-semibold text-navy-dark hover:bg-gold-tint"
               >
                 {data.cta_label}
-              </Link>
+              </SmartLink>
             )}
           </div>
         </section>
@@ -162,7 +162,7 @@ function Block({ block, media }: { block: PageBlock; media: ReturnType<typeof us
           <div className="mx-auto flex max-w-2xl flex-col items-center gap-3">
             <h2 className="font-display text-h2 font-semibold">{data.heading}</h2>
             {data.body && <p className={cn("text-body", isPrimary ? "text-white/85" : "text-neutral-600")}>{data.body}</p>}
-            <Link
+            <SmartLink
               to={data.button_url}
               className={cn(
                 "mt-2 inline-flex h-11 items-center rounded px-6 text-body-sm font-semibold",
@@ -170,7 +170,7 @@ function Block({ block, media }: { block: PageBlock; media: ReturnType<typeof us
               )}
             >
               {data.button_label}
-            </Link>
+            </SmartLink>
           </div>
         </section>
       );

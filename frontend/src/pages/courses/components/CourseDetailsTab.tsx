@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Button, Input, Switch, useToast } from "@/components/ui";
 import { api } from "@/lib/api";
 import { ENDPOINTS } from "@/lib/endpoints";
-import type { ApiCollection, ApiResponse } from "@/types/api";
+import type { ApiCollection, ApiError, ApiResponse } from "@/types/api";
 import type { Course, CoursePayload, CourseStatus, CourseLookup, CourseCategory } from "@/types/course";
 import type { Faculty } from "@/types/faculty";
 import type { Department } from "@/types/department";
@@ -74,8 +74,9 @@ export function CourseDetailsTab({ course, canEdit, onSave }: CourseDetailsTabPr
     try {
       await onSave(form);
       showToast("Course details saved.", "success");
-    } catch {
-      showToast("Could not save. Check required fields and uniqueness of code/slug.", "error");
+    } catch (err) {
+      const firstFieldError = Object.values((err as ApiError).errors ?? {})[0]?.[0];
+      showToast(firstFieldError ?? "Could not save. Check required fields and uniqueness of code/slug.", "error");
     } finally {
       setIsSaving(false);
     }
@@ -95,7 +96,7 @@ export function CourseDetailsTab({ course, canEdit, onSave }: CourseDetailsTabPr
           <span className="text-body-sm font-medium text-[color:var(--color-text)]">Faculty</span>
           <select
             value={form.faculty_id ?? ""}
-            onChange={(e) => setForm({ ...form, faculty_id: Number(e.target.value), department_id: undefined })}
+            onChange={(e) => setForm({ ...form, faculty_id: Number(e.target.value), department_id: null })}
             className="h-10 rounded-sm border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 text-body"
           >
             {faculties.map((f) => (
@@ -112,6 +113,10 @@ export function CourseDetailsTab({ course, canEdit, onSave }: CourseDetailsTabPr
             onChange={(e) => setForm({ ...form, department_id: Number(e.target.value) })}
             className="h-10 rounded-sm border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 text-body"
           >
+            {/* Changing Faculty clears department_id — without this option, a <select>
+                whose value matches no <option> silently falls back to displaying the
+                first real one, making an unset department look chosen when it isn't. */}
+            <option value="">Select a department…</option>
             {departmentsForFaculty.map((d) => (
               <option key={d.id} value={d.id}>
                 {d.name}

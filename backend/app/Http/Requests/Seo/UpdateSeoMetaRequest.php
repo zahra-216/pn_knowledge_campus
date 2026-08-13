@@ -27,8 +27,10 @@ class UpdateSeoMetaRequest extends FormRequest
             'schema_type' => ['nullable', 'string', 'max:60'],
             'og_title' => ['nullable', 'string', 'max:160'],
             'og_description' => ['nullable', 'string', 'max:320'],
+            'og_image_media_id' => ['nullable', 'integer', 'exists:media,id'],
             'twitter_title' => ['nullable', 'string', 'max:160'],
             'twitter_description' => ['nullable', 'string', 'max:320'],
+            'twitter_image_media_id' => ['nullable', 'integer', 'exists:media,id'],
             'robots_index' => ['boolean'],
             'robots_follow' => ['boolean'],
         ];

@@ -35,6 +35,7 @@ class MediaLibrary extends Model implements HasMedia
         // optimizer silently no-ops if its binary isn't installed on the
         // host, so this is always safe to call, never a hard requirement.
         $this->addMediaConversion('thumb')
+            ->keepOriginalImageFormat()
             ->width(300)
             ->height(300)
             ->sharpen(10)
@@ -42,6 +43,7 @@ class MediaLibrary extends Model implements HasMedia
             ->nonQueued();
 
         $this->addMediaConversion('web')
+            ->keepOriginalImageFormat()
             ->width(1600)
             ->optimize()
             ->nonQueued();

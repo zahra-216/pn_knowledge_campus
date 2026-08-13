@@ -264,12 +264,22 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('download-categories', DownloadCategoryController::class)->parameters(['download-categories' => 'downloadCategory']);
         Route::apiResource('downloads', DownloadController::class);
 
+        // Audit fix (High remediation) — reuse-pivot admin endpoints,
+        // see DownloadAttachment's docblock.
+        Route::post('downloads/{download}/attach', [DownloadController::class, 'attach']);
+        Route::delete('downloads/{download}/attach/{attachableType}/{attachableId}', [DownloadController::class, 'detach']);
+        Route::get('downloads/{download}/file', [DownloadController::class, 'previewFile']);
+
         // Milestone 20 — Online Applications review queue. 'export' must
         // be declared before the {application} show route so it isn't
         // swallowed as an id. No admin create/delete — applications are
         // authored by visitors (see the public group below), not staff;
         // staff only review/decide (see ApplicationController's docblock).
         Route::get('applications/export', [ApplicationController::class, 'export']);
+        // Audit fix (Low remediation) — declared before {application} for
+        // the same reason as 'export' just above: 'drafts' would
+        // otherwise be swallowed as a route-model-binding id.
+        Route::delete('applications/drafts', [ApplicationController::class, 'pruneDrafts']);
         Route::get('applications', [ApplicationController::class, 'index']);
         Route::get('applications/{application}', [ApplicationController::class, 'show']);
         Route::patch('applications/{application}/under-review', [ApplicationController::class, 'markUnderReview']);
@@ -286,12 +296,19 @@ Route::prefix('v1')->group(function () {
         // Milestone 24 — Dashboard Analytics.
         Route::get('analytics/dashboard', [AnalyticsController::class, 'dashboard']);
 
-        // Inquiry Management admin inbox. 'export' declared before the
-        // {inquiry} routes for the same reason as Applications' own.
+        // Inquiry Management admin inbox. 'export' and 'assignable-staff'
+        // declared before the {inquiry} routes for the same reason as
+        // Applications' own.
         Route::get('inquiries/export', [InquiryController::class, 'export']);
+        Route::get('inquiries/assignable-staff', [InquiryController::class, 'assignableStaff']);
         Route::get('inquiries', [InquiryController::class, 'index']);
         Route::get('inquiries/{inquiry}', [InquiryController::class, 'show']);
         Route::patch('inquiries/{inquiry}/status', [InquiryController::class, 'updateStatus']);
+        // Audit fix (High remediation) — staff assignment + follow-up
+        // notes, the two Inquiry Management capabilities the Database
+        // Design document specified but the schema never supported.
+        Route::patch('inquiries/{inquiry}/assign', [InquiryController::class, 'assign']);
+        Route::post('inquiries/{inquiry}/notes', [InquiryController::class, 'addNote']);
         Route::delete('inquiries/{inquiry}', [InquiryController::class, 'destroy']);
 
         // Users, Roles & Permissions (SRS FR-29). 'permissions' is
@@ -300,6 +317,9 @@ Route::prefix('v1')->group(function () {
         Route::get('permissions', [RoleController::class, 'permissions']);
         Route::apiResource('roles', RoleController::class)->parameters(['roles' => 'role']);
         Route::apiResource('users', UserController::class)->parameters(['users' => 'user']);
+
+        // Audit fix (Medium remediation) — "revoke all sessions" action.
+        Route::post('users/{user}/revoke-tokens', [UserController::class, 'revokeTokens']);
     });
 
     // ------------------------------------------------------------------
@@ -378,8 +398,16 @@ Route::prefix('v1')->group(function () {
         Route::delete('applications/{application:application_number}/documents/{mediaId}', [ApplicationController::class, 'deleteDocument']);
         Route::post('applications/{application:application_number}/submit', [ApplicationController::class, 'submit']);
 
-        // Milestone 24 — Dashboard Analytics' page-view ping (see PageView's
-        // migration docblock).
+        // Audit fix (High remediation) — gated-download capture form, see
+        // DownloadController::requestDownload()'s docblock.
+        Route::post('downloads/{download}/request', [DownloadController::class, 'requestDownload']);
+    });
+
+    // Audit fix (High remediation) — was grouped under 'public-write'
+    // (10/min) above, where it competed for the same budget as genuine
+    // Inquiry/Application submissions despite firing on every single page
+    // navigation. Its own, more generous limiter (see AppServiceProvider).
+    Route::middleware('throttle:page-view')->group(function () {
         Route::post('analytics/pageview', [AnalyticsController::class, 'trackPageView']);
     });
 
@@ -390,5 +418,11 @@ Route::prefix('v1')->group(function () {
     // staff (Bearer token) — see ApplicationController::downloadDocument()'s
     // docblock.
     Route::get('applications/{application:application_number}/documents/{mediaId}/download', [ApplicationController::class, 'downloadDocument']);
+
+    // Audit fix (High remediation) — signed-URL file stream for gated
+    // Downloads, see DownloadController::serveFile()'s docblock. Not
+    // behind the 60s public cache group above: the signature is
+    // single-use-window (30 min) and per-visitor, not a cacheable asset.
+    Route::get('downloads/{download}/file', [DownloadController::class, 'serveFile'])->name('downloads.file');
 
 });

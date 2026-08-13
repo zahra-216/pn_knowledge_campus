@@ -9,6 +9,7 @@ use App\Models\Media;
 use App\Models\Partner;
 use App\Models\PartnerCategory;
 use App\Support\ApiResponse;
+use App\Support\PublicCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -38,6 +39,9 @@ class PartnerController extends Controller
 
         $this->attachMedia($partner, $request->input('media_id'));
 
+        // Audit fix (Medium remediation) — see TestimonialController's docblock.
+        PublicCache::forgetHomepage();
+
         return ApiResponse::success(new PartnerResource($partner->fresh('category')), 201);
     }
 
@@ -58,6 +62,8 @@ class PartnerController extends Controller
             $this->attachMedia($partner, $request->input('media_id'));
         }
 
+        PublicCache::forgetHomepage();
+
         return ApiResponse::success(new PartnerResource($partner->fresh('category')));
     }
 
@@ -66,6 +72,8 @@ class PartnerController extends Controller
         Gate::authorize('delete', Partner::class);
 
         $partner->delete();
+
+        PublicCache::forgetHomepage();
 
         return response()->noContent();
     }

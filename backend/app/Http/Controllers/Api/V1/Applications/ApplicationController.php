@@ -285,6 +285,19 @@ class ApplicationController extends Controller
             ->where('status', '!=', 'draft')
             ->status($request->input('filter.status'))
             ->when($request->filled('filter.course'), fn ($q) => $q->where('course_id', $request->input('filter.course')))
+            // Audit fix (Medium remediation) — this export previously
+            // ignored the same `search` param index() applies, so a
+            // staff member exporting after searching the on-screen list
+            // got every row matching status/course instead of the
+            // narrower result they were actually looking at.
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $term = $request->string('search');
+                $query->where(fn ($q) => $q
+                    ->where('first_name', 'like', "%{$term}%")
+                    ->orWhere('last_name', 'like', "%{$term}%")
+                    ->orWhere('email', 'like', "%{$term}%")
+                    ->orWhere('application_number', 'like', "%{$term}%"));
+            })
             ->orderBy('submitted_at')
             ->get();
 
@@ -307,6 +320,30 @@ class ApplicationController extends Controller
 
             fclose($out);
         }, 'applications-'.now()->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv']);
+    }
+
+    /**
+     * DELETE /api/v1/admin/applications/drafts — audit fix (Low
+     * remediation). Drafts are invisible to both index() and show()
+     * above by design (an unsubmitted application isn't a real one
+     * yet), so there was never a way to reach — or clean up — a single
+     * abandoned draft by id in the first place; this is a bulk sweep
+     * instead. Scoped to drafts last touched more than `days` ago
+     * (30 by default) so an applicant who's still partway through
+     * filling the form out isn't affected. Soft-deleted, like every
+     * other destructive admin action in this app.
+     */
+    public function pruneDrafts(Request $request): JsonResponse
+    {
+        Gate::authorize('delete', Application::class);
+
+        $days = max(1, $request->integer('days', 30));
+        $cutoff = now()->subDays($days);
+
+        $count = Application::where('status', 'draft')->where('updated_at', '<', $cutoff)->count();
+        Application::where('status', 'draft')->where('updated_at', '<', $cutoff)->delete();
+
+        return ApiResponse::success(['deleted' => $count]);
     }
 
     private function ensureReviewable(Application $application): void

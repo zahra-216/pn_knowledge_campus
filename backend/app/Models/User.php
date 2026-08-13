@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
@@ -16,10 +18,16 @@ use Spatie\Permission\Traits\HasRoles;
  * Admissions — see the SRS Permission Matrix).
  *
  * Database Design reference: Section 4.1 — Identity & Access.
+ *
+ * HasMedia/'avatar' collection (audit fix, Medium remediation) — the
+ * documented profile-picture capability staff had no way to use; this
+ * closes the model-level gap. No upload UI exists yet in the Users
+ * admin screen — deliberately out of scope here, since building that
+ * is real net-new surface, not a relation fix.
  */
-class User extends Authenticatable
+class User extends Authenticatable implements HasMedia
 {
-    use HasApiTokens, HasAuditColumns, HasFactory, HasRoles, Notifiable;
+    use HasApiTokens, HasAuditColumns, HasFactory, HasRoles, InteractsWithMedia, Notifiable;
 
     protected $fillable = [
         'name',
@@ -51,5 +59,10 @@ class User extends Authenticatable
     public function permissionKeys(): array
     {
         return $this->getAllPermissions()->pluck('name')->values()->all();
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('avatar')->singleFile();
     }
 }

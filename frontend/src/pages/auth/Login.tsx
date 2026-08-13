@@ -49,7 +49,7 @@ export function Login() {
       <Card className="w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center gap-2 text-center">
           <GraduationCap className="h-8 w-8 text-navy" aria-hidden="true" />
-          <h1 className="font-display text-h3 font-semibold text-[color:var(--color-text)]">PN Knowledge Campus</h1>
+          <h1 className="font-display text-h3 font-semibold text-[color:var(--color-text)]">PNK Global Campus</h1>
           <p className="text-body-sm text-neutral-500">Sign in to the admin panel</p>
         </div>
 

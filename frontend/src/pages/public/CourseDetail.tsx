@@ -19,7 +19,7 @@ function flattenCurriculum(items: CourseCurriculumItem[], depth = 0): { id: numb
       question: `${"— ".repeat(depth)}${item.title}${item.duration ? ` (${item.duration})` : ""}`,
       answer: item.description ?? "",
     },
-    ...flattenCurriculum(item.children, depth + 1),
+    ...flattenCurriculum(item.children ?? [], depth + 1),
   ]);
 }
 
@@ -41,7 +41,7 @@ export function CourseDetail() {
           "@type": "Course",
           name: course.course_name,
           description: course.overview,
-          provider: { "@type": "Organization", name: "PN Knowledge Campus" },
+          provider: { "@type": "Organization", name: "PNK Global Campus" },
         }
       : null,
   });

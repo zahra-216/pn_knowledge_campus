@@ -73,6 +73,16 @@ const Gallery = lazy(() => import("@/pages/public/Gallery").then((m) => ({ defau
 const GalleryAlbumDetail = lazy(() => import("@/pages/public/GalleryAlbumDetail").then((m) => ({ default: m.GalleryAlbumDetail })));
 const Contact = lazy(() => import("@/pages/public/Contact").then((m) => ({ default: m.Contact })));
 const PublicFaq = lazy(() => import("@/pages/public/Faq").then((m) => ({ default: m.Faq })));
+const About = lazy(() => import("@/pages/public/About").then((m) => ({ default: m.About })));
+const Admissions = lazy(() => import("@/pages/public/Admissions").then((m) => ({ default: m.Admissions })));
+const HowToApply = lazy(() => import("@/pages/public/HowToApply").then((m) => ({ default: m.HowToApply })));
+const InternationalStudents = lazy(() =>
+  import("@/pages/public/InternationalStudents").then((m) => ({ default: m.InternationalStudents }))
+);
+const StudentLife = lazy(() => import("@/pages/public/StudentLife").then((m) => ({ default: m.StudentLife })));
+const PrivacyPolicy = lazy(() => import("@/pages/public/PrivacyPolicy").then((m) => ({ default: m.PrivacyPolicy })));
+const Terms = lazy(() => import("@/pages/public/Terms").then((m) => ({ default: m.Terms })));
+const RefundPolicy = lazy(() => import("@/pages/public/RefundPolicy").then((m) => ({ default: m.RefundPolicy })));
 const PublicDownloads = lazy(() => import("@/pages/public/Downloads").then((m) => ({ default: m.Downloads })));
 const Apply = lazy(() => import("@/pages/public/Apply").then((m) => ({ default: m.Apply })));
 const ApplyResume = lazy(() => import("@/pages/public/ApplyResume").then((m) => ({ default: m.ApplyResume })));
@@ -180,6 +190,14 @@ export function AppRoutes() {
           <Route path="apply/resume" element={<ApplyResume />} />
           <Route path="search" element={<SearchResults />} />
           <Route path="contact" element={<Contact />} />
+          <Route path="about" element={<About />} />
+          <Route path="admissions" element={<Admissions />} />
+          <Route path="how-to-apply" element={<HowToApply />} />
+          <Route path="international-students" element={<InternationalStudents />} />
+          <Route path="student-life" element={<StudentLife />} />
+          <Route path="privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="terms" element={<Terms />} />
+          <Route path="refund-policy" element={<RefundPolicy />} />
           <Route path=":slug" element={<StaticPage />} />
           <Route path="*" element={<NotFound />} />
         </Route>

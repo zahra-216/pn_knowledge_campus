@@ -4,8 +4,12 @@ namespace App\Http\Controllers\Api\V1\Analytics;
 
 use App\Http\Controllers\Controller;
 use App\Models\Application;
+use App\Models\BlogPost;
 use App\Models\Course;
+use App\Models\Event;
 use App\Models\Inquiry;
+use App\Models\News;
+use App\Models\Page;
 use App\Models\PageView;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -55,7 +59,64 @@ class AnalyticsController extends Controller
             'applications' => $this->applications($start, $days),
             'inquiries' => $this->inquiries($start, $days),
             'popular_courses' => $this->popularCourses(),
+            'published_content_counts' => $this->publishedContentCounts(),
+            'recent_activity' => $this->recentActivity(),
         ]);
+    }
+
+    /**
+     * Audit fix (High remediation) — FR-18 asks for "published content
+     * counts" alongside the inquiry/application analytics above, which
+     * this Dashboard never surfaced before. One row per content type
+     * that has a Draft/Published/Scheduled/Archived lifecycle.
+     */
+    private function publishedContentCounts(): array
+    {
+        return [
+            'courses' => Course::where('status', 'published')->count(),
+            'news' => News::where('status', 'published')->count(),
+            'blog_posts' => BlogPost::where('status', 'published')->count(),
+            'events' => Event::where('status', 'published')->count(),
+            'pages' => Page::where('status', 'published')->count(),
+        ];
+    }
+
+    /**
+     * Audit fix (High remediation) — FR-18's other missing half, "recent
+     * activity". The most recently updated row across every content
+     * type with an audit trail (HasAuditColumns' `editor` relation),
+     * merged and re-sorted rather than queried type-by-type, so a
+     * Content Editor sees what actually changed most recently
+     * regardless of which module it was in.
+     */
+    private function recentActivity(): Collection
+    {
+        $sources = [
+            'course' => [Course::class, 'course_name', '/admin/courses'],
+            'news' => [News::class, 'title', '/admin/news'],
+            'blog' => [BlogPost::class, 'title', '/admin/blog'],
+            'event' => [Event::class, 'title', '/admin/events'],
+            'page' => [Page::class, 'title', '/admin/pages'],
+        ];
+
+        $activity = collect();
+
+        foreach ($sources as $type => [$modelClass, $titleColumn, $adminPathPrefix]) {
+            $modelClass::with('editor')->latest('updated_at')->limit(5)->get()
+                ->each(function ($model) use (&$activity, $type, $titleColumn, $adminPathPrefix) {
+                    $activity->push([
+                        'type' => $type,
+                        'id' => $model->id,
+                        'title' => $model->{$titleColumn},
+                        'status' => $model->status,
+                        'updated_at' => $model->updated_at,
+                        'updated_by' => $model->editor?->name,
+                        'admin_url' => "{$adminPathPrefix}/{$model->id}",
+                    ]);
+                });
+        }
+
+        return $activity->sortByDesc('updated_at')->take(10)->values();
     }
 
     private function visitors(Carbon $start, int $days): array

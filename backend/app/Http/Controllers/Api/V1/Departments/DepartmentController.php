@@ -99,7 +99,11 @@ class DepartmentController extends Controller
     public function publicIndex(Request $request): JsonResponse
     {
         $departments = Department::published()
-            ->with('faculty')
+            // Audit fix (Medium remediation) — 'media' wasn't eager-loaded,
+            // so DepartmentResource's banner-image lookup fired one query
+            // per row (15 queries for 13 departments, measured). Faculty's
+            // equivalent endpoint already does this correctly.
+            ->with(['faculty', 'media'])
             ->when($request->filled('faculty'), function ($query) use ($request) {
                 $faculty = Faculty::where('slug', $request->string('faculty'))->first();
                 $query->where('faculty_id', $faculty?->id ?? 0);
@@ -118,7 +122,7 @@ class DepartmentController extends Controller
     public function publicShow(string $slug): JsonResponse
     {
         $department = Department::published()->where('slug', $slug)->firstOrFail();
-        $department->load(['faculty', 'courses' => fn ($query) => $query->published(), 'seoMeta']);
+        $department->load(['faculty', 'media', 'courses' => fn ($query) => $query->published(), 'seoMeta']);
 
         return ApiResponse::success(new DepartmentResource($department));
     }

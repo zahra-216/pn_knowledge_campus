@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ImageIcon } from "lucide-react";
-import { Button } from "@/components/ui";
+import { Button, Input } from "@/components/ui";
 import { MediaPickerModal } from "@/components/media/MediaPickerModal";
 import type { SettingsMap } from "@/types/settings";
 import type { MediaItem } from "@/types/media";
@@ -15,19 +15,38 @@ interface BrandingTabProps {
 /**
  * UI/UX Design, Admin Sitemap — "Logo & Favicon" tab. First real
  * consumer of the reusable MediaPickerModal (Development Roadmap,
- * Milestone 1).
+ * Milestone 1). Extended with independently adjustable display heights
+ * for the logo's two public placements (header, footer) — same
+ * uploaded asset, different natural size in each spot, so a single
+ * "logo size" control wouldn't fit both without one of them looking
+ * wrong.
  */
 export function BrandingTab({ values, isLoading, isSaving, onSave }: BrandingTabProps) {
   const [pickerTarget, setPickerTarget] = useState<"logo_media_id" | "favicon_media_id" | null>(null);
+  const [sizeDraft, setSizeDraft] = useState({ header_logo_height: "", footer_logo_height: "" });
 
   const logoId = values.logo_media_id;
   const faviconId = values.favicon_media_id;
+
+  useEffect(() => {
+    setSizeDraft({
+      header_logo_height: values.header_logo_height ? String(values.header_logo_height) : "",
+      footer_logo_height: values.footer_logo_height ? String(values.footer_logo_height) : "",
+    });
+  }, [values.header_logo_height, values.footer_logo_height]);
 
   async function handleSelect(item: MediaItem) {
     if (pickerTarget) {
       await onSave({ [pickerTarget]: String(item.id) });
     }
     setPickerTarget(null);
+  }
+
+  async function handleSaveSizes() {
+    await onSave({
+      header_logo_height: sizeDraft.header_logo_height,
+      footer_logo_height: sizeDraft.footer_logo_height,
+    });
   }
 
   if (isLoading) {
@@ -61,6 +80,43 @@ export function BrandingTab({ values, isLoading, isSaving, onSave }: BrandingTab
           </Button>
         </div>
       ))}
+
+      <hr className="border-[color:var(--color-border)]" />
+
+      <div className="flex flex-col gap-4">
+        <div>
+          <p className="text-body-sm font-medium text-[color:var(--color-text)]">Logo Display Size</p>
+          <p className="text-caption text-neutral-500">
+            Controls how tall the logo renders in each placement on the public site. The same logo image is used in
+            both; only the display height differs.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-4">
+          <Input
+            type="number"
+            min={16}
+            max={200}
+            label="Header height (px)"
+            value={sizeDraft.header_logo_height}
+            onChange={(e) => setSizeDraft((d) => ({ ...d, header_logo_height: e.target.value }))}
+            className="w-40"
+          />
+          <Input
+            type="number"
+            min={16}
+            max={200}
+            label="Footer height (px)"
+            value={sizeDraft.footer_logo_height}
+            onChange={(e) => setSizeDraft((d) => ({ ...d, footer_logo_height: e.target.value }))}
+            className="w-40"
+          />
+        </div>
+
+        <Button onClick={handleSaveSizes} isLoading={isSaving} className="self-start">
+          Save Sizes
+        </Button>
+      </div>
 
       <MediaPickerModal
         open={pickerTarget !== null}

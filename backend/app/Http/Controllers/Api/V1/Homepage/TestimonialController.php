@@ -8,6 +8,7 @@ use App\Http\Resources\TestimonialResource;
 use App\Models\Media;
 use App\Models\Testimonial;
 use App\Support\ApiResponse;
+use App\Support\PublicCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -42,6 +43,12 @@ class TestimonialController extends Controller
 
         $this->attachMedia($testimonial, $request->input('media_id'));
 
+        // Audit fix (Medium remediation) — testimonials feed the homepage's
+        // featured carousel, but writes here never invalidated its cache
+        // entry, so a newly-featured testimonial didn't appear live for up
+        // to 5 minutes (the blanket TTL) with no way to force it.
+        PublicCache::forgetHomepage();
+
         return ApiResponse::success(new TestimonialResource($testimonial->fresh()->load('course')), 201);
     }
 
@@ -62,6 +69,8 @@ class TestimonialController extends Controller
             $this->attachMedia($testimonial, $request->input('media_id'));
         }
 
+        PublicCache::forgetHomepage();
+
         return ApiResponse::success(new TestimonialResource($testimonial->fresh()));
     }
 
@@ -70,6 +79,8 @@ class TestimonialController extends Controller
         Gate::authorize('delete', Testimonial::class);
 
         $testimonial->delete();
+
+        PublicCache::forgetHomepage();
 
         return response()->noContent();
     }

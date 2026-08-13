@@ -102,6 +102,12 @@ class Course extends Model implements HasMedia
         return $this->morphMany(Faq::class, 'faqable')->orderBy('order');
     }
 
+    /** Audit fix (Medium remediation) — Testimonial::course() already existed; this inverse was the missing half. */
+    public function testimonials(): HasMany
+    {
+        return $this->hasMany(Testimonial::class);
+    }
+
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('featured_image')->singleFile();
@@ -111,8 +117,8 @@ class Course extends Model implements HasMedia
 
     public function registerMediaConversions(?Media $media = null): void
     {
-        $this->addMediaConversion('thumb')->width(300)->height(300)->sharpen(10)->optimize()->nonQueued();
-        $this->addMediaConversion('web')->width(1920)->optimize()->nonQueued();
+        $this->addMediaConversion('thumb')->keepOriginalImageFormat()->width(300)->height(300)->sharpen(10)->optimize()->nonQueued();
+        $this->addMediaConversion('web')->keepOriginalImageFormat()->width(1920)->optimize()->nonQueued();
     }
 
     public function scopePublished(Builder $query): Builder

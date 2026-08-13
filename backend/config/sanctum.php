@@ -16,7 +16,13 @@ return [
 
     'guard' => ['web'],
 
-    'expiration' => null, // tokens do not expire by default (API Design, Section 2.4) — revoked explicitly instead
+    // Audit fix (Medium remediation) — a leaked/stolen bearer token
+    // previously stayed valid forever; the only revocation path was the
+    // user's own device-scoped logout or an admin deleting the account
+    // outright. Minutes, per Sanctum's own config — 43200 = 30 days.
+    // See UserController::revokeSessions() for the immediate,
+    // incident-response counterpart to this ceiling.
+    'expiration' => env('SANCTUM_TOKEN_EXPIRATION_MINUTES', 43200),
 
     'token_prefix' => env('SANCTUM_TOKEN_PREFIX', ''),
 

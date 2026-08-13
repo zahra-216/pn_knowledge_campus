@@ -24,7 +24,7 @@ class MenuItemController extends Controller
     {
         Gate::authorize('viewAny', MenuItem::class);
 
-        $menu->load('topLevelItems.children.children');
+        $menu->load('topLevelItems.children.children.children');
 
         return ApiResponse::success(MenuItemResource::collection($menu->topLevelItems));
     }
@@ -82,7 +82,7 @@ class MenuItemController extends Controller
 
         PublicCache::forgetMenu($menu->name);
 
-        $menu->load('topLevelItems.children.children');
+        $menu->load('topLevelItems.children.children.children');
 
         return ApiResponse::success(MenuItemResource::collection($menu->topLevelItems));
     }

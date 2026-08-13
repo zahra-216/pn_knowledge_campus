@@ -27,7 +27,10 @@ use Illuminate\Support\Str;
  */
 class BlogPostController extends Controller
 {
-    private const WITH = ['category', 'author', 'tags'];
+    // 'media' (audit fix, Medium remediation) — see CourseController's
+    // identical WITH-constant comment for why this avoids an N+1 on
+    // BlogPostResource's featured_image/gallery lookups.
+    private const WITH = ['category', 'author', 'tags', 'media'];
 
     public function index(Request $request): JsonResponse
     {

@@ -28,8 +28,8 @@ class PageSeeder extends Seeder
     public function run(): void
     {
         $this->page('About', 'about', [
-            $this->hero('About PN Knowledge Campus', 'Building futures through knowledge, character, and community.'),
-            $this->richText('<p>PN Knowledge Campus has served students and the wider community for years, combining rigorous academics with a supportive campus life.</p>'),
+            $this->hero('About PNK Global Campus', 'Building futures through knowledge, character, and community.'),
+            $this->richText('<p>PNK Global Campus has served students and the wider community for years, combining rigorous academics with a supportive campus life.</p>'),
         ]);
 
         $this->page('Vision', 'vision', [
@@ -44,9 +44,9 @@ class PageSeeder extends Seeder
 
         $this->page("Chairman's Message", 'chairmans-message', [
             $this->hero("Chairman's Message"),
-            $this->richText('<p>Welcome to PN Knowledge Campus. It is our privilege to guide every student toward a future built on knowledge and character.</p>'),
+            $this->richText('<p>Welcome to PNK Global Campus. It is our privilege to guide every student toward a future built on knowledge and character.</p>'),
             $this->testimonials([
-                ['quote' => 'Education is the foundation on which we build a better future for every student who walks through our doors.', 'name' => 'The Chairman', 'role' => 'Chairman, PN Knowledge Campus'],
+                ['quote' => 'Education is the foundation on which we build a better future for every student who walks through our doors.', 'name' => 'The Chairman', 'role' => 'Chairman, PNK Global Campus'],
             ]),
         ]);
 
@@ -61,13 +61,13 @@ class PageSeeder extends Seeder
 
         $this->page('How to Apply', 'how-to-apply', [
             $this->hero('How to Apply', 'Four simple steps to start your application.'),
-            $this->richText('<p>Applying to PN Knowledge Campus is straightforward — choose your course, submit your documents, and our Admissions team will guide you through the rest.</p>'),
+            $this->richText('<p>Applying to PNK Global Campus is straightforward — choose your course, submit your documents, and our Admissions team will guide you through the rest.</p>'),
             $this->cta('Have a question?', 'Reach out to our Admissions team at any point in the process.', 'Contact Admissions', '/contact'),
         ]);
 
         $this->page('Scholarships', 'scholarships', [
             $this->hero('Scholarships', 'Financial support for students who qualify.'),
-            $this->text('PN Knowledge Campus offers a range of merit- and need-based scholarships across our Faculties. Speak with Admissions to find out which ones you may be eligible for.'),
+            $this->text('PNK Global Campus offers a range of merit- and need-based scholarships across our Faculties. Speak with Admissions to find out which ones you may be eligible for.'),
             $this->faq([
                 ['question' => 'When should I apply for a scholarship?', 'answer' => 'Scholarship applications open alongside each admissions cycle — apply at the same time as your course application.'],
             ]),
@@ -75,7 +75,7 @@ class PageSeeder extends Seeder
 
         $this->page('International Students', 'international-students', [
             $this->hero('International Students'),
-            $this->text('PN Knowledge Campus welcomes students from around the world, offering dedicated support for visas, housing, and orientation.'),
+            $this->text('PNK Global Campus welcomes students from around the world, offering dedicated support for visas, housing, and orientation.'),
             $this->faq([
                 ['question' => 'Do you offer visa support?', 'answer' => 'Yes, our International Office assists with visa applications and documentation.'],
             ]),
@@ -92,23 +92,22 @@ class PageSeeder extends Seeder
         ]);
 
         $this->page('Career', 'career', [
-            $this->hero('Careers at PN Knowledge Campus'),
+            $this->hero('Careers at PNK Global Campus'),
             $this->cta('Join our team', 'We are always looking for passionate educators and staff.', 'View Openings', '/contact'),
         ]);
 
-        // Contact's own hero copy — the actual form and Settings-driven
-        // contact details/branch list/map render as a bespoke React
-        // component on the public site, not a Page Builder block type,
-        // since "contact form" isn't one of the SRS's documented block
-        // types. This page record just gives the Contact route a real
-        // hero/intro to render above that component.
-        $this->page('Contact', 'contact', [
-            $this->hero('Contact Us', "We'd love to hear from you."),
-        ]);
+        // Audit fix (Medium remediation) — a "Contact" Page Builder row
+        // used to be seeded here on the premise that Contact.tsx would
+        // render its hero block above the bespoke contact-form component,
+        // but that was never actually wired up: /contact is a static
+        // React route that always wins over the :slug catch-all, and
+        // Contact.tsx never calls the pages API or renders blocks at all.
+        // The row was permanently unreachable — an admin editing it in
+        // the Page Builder saw no effect anywhere — so it's not seeded.
 
         $this->page('Privacy Policy', 'privacy-policy', [
             $this->hero('Privacy Policy'),
-            $this->richText('<p>This Privacy Policy describes how PN Knowledge Campus collects, uses, and protects your personal information.</p>'),
+            $this->richText('<p>This Privacy Policy describes how PNK Global Campus collects, uses, and protects your personal information.</p>'),
         ]);
 
         $this->page('Terms & Conditions', 'terms', [
@@ -118,7 +117,7 @@ class PageSeeder extends Seeder
 
         $this->page('Refund Policy', 'refund-policy', [
             $this->hero('Refund Policy'),
-            $this->richText('<p>This Refund Policy outlines the circumstances under which fees paid to PN Knowledge Campus may be refunded.</p>'),
+            $this->richText('<p>This Refund Policy outlines the circumstances under which fees paid to PNK Global Campus may be refunded.</p>'),
         ]);
     }
 

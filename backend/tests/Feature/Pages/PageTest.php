@@ -40,6 +40,18 @@ class PageTest extends TestCase
         $this->actingAs($admin)->deleteJson("/api/v1/admin/pages/{$pageId}")->assertNoContent();
     }
 
+    /** Audit fix (Medium remediation) — Pages previously had no soft-delete at all. */
+    public function test_deleting_a_page_soft_deletes_it(): void
+    {
+        $admin = $this->userWithRole('Administrator');
+        $page = Page::create(['title' => 'About', 'slug' => 'about']);
+
+        $this->actingAs($admin)->deleteJson("/api/v1/admin/pages/{$page->id}")->assertNoContent();
+
+        $this->assertSoftDeleted('pages', ['id' => $page->id]);
+        $this->assertDatabaseHas('pages', ['id' => $page->id]);
+    }
+
     public function test_content_editor_can_create_and_edit_but_not_delete(): void
     {
         $editor = $this->userWithRole('Content Editor');

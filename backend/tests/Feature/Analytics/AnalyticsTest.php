@@ -127,4 +127,29 @@ class AnalyticsTest extends TestCase
         $response->assertOk();
         $this->assertCount(90, $response->json('data.visitors.labels'));
     }
+
+    /**
+     * Audit fix (High remediation) — FR-18 asks for "published content
+     * counts" and "recent activity", neither of which the Dashboard
+     * exposed before this.
+     */
+    public function test_dashboard_returns_published_content_counts_and_recent_activity(): void
+    {
+        $user = $this->userWithRole('Super Admin');
+        $this->actingAs($user);
+        $course = $this->course();
+        $course->update(['status' => 'published']);
+
+        $response = $this->getJson('/api/v1/admin/analytics/dashboard');
+
+        $response->assertOk();
+        $this->assertSame(1, $response->json('data.published_content_counts.courses'));
+        $this->assertSame(0, $response->json('data.published_content_counts.news'));
+
+        $activity = collect($response->json('data.recent_activity'));
+        $courseActivity = $activity->firstWhere('type', 'course');
+        $this->assertNotNull($courseActivity);
+        $this->assertSame('BSc Computer Science', $courseActivity['title']);
+        $this->assertSame($user->name, $courseActivity['updated_by']);
+    }
 }

@@ -3,12 +3,11 @@ import { Lock, Search, Download, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { ENDPOINTS } from "@/lib/endpoints";
 import { Breadcrumb } from "@/layouts/AdminLayout";
-import { Card, Table, Badge, Modal, Button, useToast, type TableColumn } from "@/components/ui";
+import { Card, Table, Badge, Modal, Button, useToast, type TableColumn, Pagination } from "@/components/ui";
 import type { BadgeTone } from "@/components/ui/Badge";
-import { Pagination } from "@/components/public/Pagination";
 import { usePermission } from "@/hooks/usePermission";
-import type { ApiCollection, PaginationMeta } from "@/types/api";
-import type { AdminInquiry, InquiryStatus } from "@/types/inquiry";
+import type { ApiCollection, ApiResponse, PaginationMeta } from "@/types/api";
+import type { AdminInquiry, AssignableStaffMember, InquiryStatus } from "@/types/inquiry";
 
 const STATUS_TONE: Record<InquiryStatus, BadgeTone> = {
   new: "info",
@@ -31,9 +30,12 @@ const STATUS_OPTIONS: InquiryStatus[] = ["new", "in_progress", "resolved", "spam
  * Matrix, "Inquiry Management" row: Super Admin/Administrator/
  * Admissions = Full; Marketing = View; Content Editor = no access. Logs
  * every Contact form / Course Detail "Enquire Now" submission with a
- * flat status workflow (New/In Progress/Resolved/Spam) — no assignment
- * field exists on the `inquiries` table today, so unlike Applications
- * there's no "assign to staff member" action here.
+ * status workflow (New/In Progress/Resolved/Spam), optional assignment
+ * to a staff member, and a follow-up notes thread (audit fix, High
+ * remediation — both were documented from the start but never
+ * implemented). The assignable-staff list is scoped to whoever holds
+ * inquiries.manage, not the general Users list (see the backend
+ * InquiryController::assignableStaff()'s docblock for why).
  */
 export function Inquiries() {
   const { can } = usePermission();
@@ -48,6 +50,9 @@ export function Inquiries() {
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
   const [active, setActive] = useState<AdminInquiry | null>(null);
+  const [staff, setStaff] = useState<AssignableStaffMember[]>([]);
+  const [noteBody, setNoteBody] = useState("");
+  const [isSavingNote, setIsSavingNote] = useState(false);
 
   const fetchInquiries = useCallback(async (params: { search: string; status: string; page: number }) => {
     setIsLoading(true);
@@ -73,10 +78,29 @@ export function Inquiries() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [can, statusFilter, page]);
 
+  useEffect(() => {
+    if (!can("inquiries.manage")) return;
+    api.get<ApiResponse<AssignableStaffMember[]>>(ENDPOINTS.inquiries.adminAssignableStaff).then(({ data }) => setStaff(data.data));
+  }, [can]);
+
   function handleSearchSubmit(e: FormEvent) {
     e.preventDefault();
     setPage(1);
     fetchInquiries({ search, status: statusFilter, page: 1 });
+  }
+
+  // The list endpoint doesn't eager-load `notes` (only the detail
+  // endpoint does), so opening "View" straight from a list row left
+  // `active.notes` undefined and crashed the whole app the moment the
+  // modal tried to render the notes thread. Fetch the real detail first.
+  async function handleView(inquiry: AdminInquiry) {
+    setNoteBody("");
+    try {
+      const { data } = await api.get<ApiResponse<AdminInquiry>>(ENDPOINTS.inquiries.adminShow(inquiry.id));
+      setActive(data.data);
+    } catch {
+      showToast("Could not load this inquiry.", "error");
+    }
   }
 
   async function handleStatusChange(inquiry: AdminInquiry, status: InquiryStatus) {
@@ -87,6 +111,31 @@ export function Inquiries() {
       await fetchInquiries({ search, status: statusFilter, page });
     } catch {
       showToast("Could not update status.", "error");
+    }
+  }
+
+  async function handleAssign(inquiry: AdminInquiry, assignedTo: number | null) {
+    try {
+      const { data } = await api.patch<ApiResponse<AdminInquiry>>(ENDPOINTS.inquiries.adminAssign(inquiry.id), { assigned_to: assignedTo });
+      setActive(data.data);
+      showToast("Assignment updated.", "success");
+      await fetchInquiries({ search, status: statusFilter, page });
+    } catch {
+      showToast("Could not update the assignment.", "error");
+    }
+  }
+
+  async function handleAddNote(inquiry: AdminInquiry) {
+    if (!noteBody.trim()) return;
+    setIsSavingNote(true);
+    try {
+      const { data } = await api.post<ApiResponse<AdminInquiry>>(ENDPOINTS.inquiries.adminNotes(inquiry.id), { body: noteBody });
+      setActive(data.data);
+      setNoteBody("");
+    } catch {
+      showToast("Could not add this note.", "error");
+    } finally {
+      setIsSavingNote(false);
     }
   }
 
@@ -133,13 +182,18 @@ export function Inquiries() {
     { key: "email", header: "Email", render: (i) => i.email },
     { key: "source", header: "Source", render: (i) => i.source_page ?? "—" },
     { key: "course", header: "Course", render: (i) => i.course?.name ?? "—" },
+    { key: "assigned_to", header: "Assigned To", render: (i) => i.assigned_to?.name ?? "—" },
     { key: "status", header: "Status", render: (i) => <Badge tone={STATUS_TONE[i.status]}>{STATUS_LABEL[i.status]}</Badge> },
     { key: "created_at", header: "Submitted", render: (i) => new Date(i.created_at).toLocaleDateString() },
     {
       key: "actions",
       header: "",
       render: (i) => (
-        <button type="button" onClick={() => setActive(i)} className="text-body-sm text-navy hover:underline dark:text-gold">
+        <button
+          type="button"
+          onClick={() => handleView(i)}
+          className="text-body-sm text-navy hover:underline dark:text-gold"
+        >
           View
         </button>
       ),
@@ -246,12 +300,67 @@ export function Inquiries() {
                   ))}
                 </select>
 
+                <label className="flex items-center gap-2 text-body-sm text-neutral-500">
+                  Assigned to
+                  <select
+                    value={active.assigned_to?.id ?? ""}
+                    onChange={(e) => handleAssign(active, e.target.value ? Number(e.target.value) : null)}
+                    className="h-10 rounded-sm border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 text-body-sm"
+                  >
+                    <option value="">Unassigned</option>
+                    {staff.map((member) => (
+                      <option key={member.id} value={member.id}>
+                        {member.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
                 <Button variant="danger" onClick={() => handleDelete(active)}>
                   <Trash2 className="h-4 w-4" aria-hidden="true" />
                   Delete
                 </Button>
               </div>
             )}
+
+            <div className="border-t border-[color:var(--color-border)] pt-4">
+              <p className="text-caption font-semibold uppercase tracking-wide text-neutral-500">Notes</p>
+              {(active.notes ?? []).length === 0 ? (
+                <p className="mt-2 text-body-sm text-neutral-500">No notes yet.</p>
+              ) : (
+                <ul className="mt-2 flex flex-col gap-3">
+                  {(active.notes ?? []).map((note) => (
+                    <li key={note.id} className="rounded-sm border border-[color:var(--color-border)] bg-neutral-50 p-3 dark:bg-white/5">
+                      <p className="whitespace-pre-line text-body-sm text-[color:var(--color-text)]">{note.body}</p>
+                      <p className="mt-1.5 text-caption text-neutral-500">
+                        {note.author?.name ?? "Unknown"} · {new Date(note.created_at).toLocaleString()}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {canManage && (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleAddNote(active);
+                  }}
+                  className="mt-3 flex flex-col gap-2"
+                >
+                  <textarea
+                    value={noteBody}
+                    onChange={(e) => setNoteBody(e.target.value)}
+                    placeholder="Add a follow-up note..."
+                    rows={2}
+                    className="w-full rounded-sm border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-2 text-body-sm"
+                  />
+                  <Button type="submit" variant="secondary" isLoading={isSavingNote} className="self-start">
+                    Add Note
+                  </Button>
+                </form>
+              )}
+            </div>
           </div>
         )}
       </Modal>

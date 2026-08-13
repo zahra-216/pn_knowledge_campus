@@ -7,9 +7,8 @@ import { useSeoHead } from "@/hooks/useSeoHead";
 import { ENDPOINTS } from "@/lib/endpoints";
 import { AsyncState } from "@/components/public/AsyncState";
 import { ContentCard } from "@/components/public/ContentCard";
-import { Pagination } from "@/components/public/Pagination";
 import { Breadcrumb } from "@/components/public/Breadcrumb";
-import { EmptyState } from "@/components/ui";
+import { EmptyState, Pagination } from "@/components/ui";
 import type { BlogCategory, BlogPost } from "@/types/blog";
 
 export function Blog() {

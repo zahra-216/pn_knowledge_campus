@@ -73,6 +73,7 @@ export function UserForm({ open, user, roleNames, isSelf, onClose, onSave }: Use
           type="password"
           value={form.password}
           onChange={(e) => setForm({ ...form, password: e.target.value })}
+          hint="At least 10 characters, with uppercase, lowercase, a number, and a symbol."
         />
         <Input
           label="Confirm Password"

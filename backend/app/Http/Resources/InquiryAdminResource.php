@@ -31,6 +31,20 @@ class InquiryAdminResource extends JsonResource
             ]),
             'international_applicant' => $this->international_applicant,
             'status' => $this->status,
+            'assigned_to' => $this->whenLoaded('assignedTo', fn () => $this->assignedTo ? [
+                'id' => $this->assignedTo->id,
+                'name' => $this->assignedTo->name,
+            ] : null),
+            // Explicit [] default rather than whenLoaded()'s bare
+            // omit-the-key-entirely behavior (audit fix, Critical
+            // remediation) — the admin list endpoint doesn't eager-load
+            // `notes`, only the detail endpoint does, and the frontend's
+            // `notes: InquiryNote[]` type assumed the key was always
+            // present. Omitting it on the list response meant any code
+            // path that set its "active inquiry" state straight from a
+            // list row instead of fetching detail crashed on
+            // `.notes.length`.
+            'notes' => $this->whenLoaded('notes', fn () => InquiryNoteResource::collection($this->notes), []),
             'created_at' => $this->created_at,
         ];
     }

@@ -10,6 +10,17 @@ import { SEARCH_TYPE_LABEL } from "@/types/search";
 
 const DEBOUNCE_MS = 250;
 
+interface SearchBoxProps {
+  /**
+   * "floating" (default) is the header's icon-that-expands behaviour.
+   * "inline" renders permanently open and full-width — used inside the
+   * Stage 1 mobile navigation panel, where a small icon-trigger would be
+   * an awkward tap target inside an already-open drawer.
+   */
+  variant?: "floating" | "inline";
+  onNavigate?: () => void;
+}
+
 /**
  * Site-wide search entry point (Milestone 21) — a header icon that
  * expands into an input with a live autocomplete dropdown
@@ -17,10 +28,11 @@ const DEBOUNCE_MS = 250;
  * "suggestions while typing" UX. Enter (or the "View all results" row)
  * navigates to the full /search results page instead.
  */
-export function SearchBox() {
+export function SearchBox({ variant = "floating", onNavigate }: SearchBoxProps) {
   const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [open, setOpen] = useState(false);
+  const inline = variant === "inline";
+  const [open, setOpen] = useState(inline);
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -43,6 +55,7 @@ export function SearchBox() {
   }, [query]);
 
   useEffect(() => {
+    if (inline) return;
     function handleClickOutside(e: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
@@ -50,33 +63,89 @@ export function SearchBox() {
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [inline]);
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!query.trim()) return;
-    setOpen(false);
+    if (!inline) setOpen(false);
     navigate(`/search?q=${encodeURIComponent(query.trim())}`);
+    onNavigate?.();
   }
 
   function handleSelect(result: SearchResult) {
-    setOpen(false);
+    if (!inline) setOpen(false);
     setQuery("");
     navigate(result.url);
+    onNavigate?.();
+  }
+
+  const suggestionsPanel = query.trim().length >= 2 && (
+    <div
+      className={cn(
+        "z-10 border border-[color:var(--pub-line)] bg-[color:var(--pub-paper)] py-2 shadow-2",
+        inline ? "mt-2 w-full rounded-sm" : "absolute left-0 top-full mt-2 w-full min-w-[300px] rounded-sm"
+      )}
+    >
+      {isLoading ? (
+        <p className="px-4 py-3 text-body-sm text-[color:var(--pub-muted)]">Searching…</p>
+      ) : suggestions.length === 0 ? (
+        <p className="px-4 py-3 text-body-sm text-[color:var(--pub-muted)]">No matches found.</p>
+      ) : (
+        <>
+          {suggestions.map((result, i) => (
+            <button
+              key={`${result.type}-${i}`}
+              type="button"
+              onClick={() => handleSelect(result)}
+              className="flex w-full flex-col items-start gap-0.5 px-4 py-2.5 text-left hover:bg-[color:var(--pub-paper-tint)]"
+            >
+              <span className="text-caption font-semibold uppercase tracking-wide text-gold">{SEARCH_TYPE_LABEL[result.type]}</span>
+              <span className="text-body-sm text-[color:var(--pub-ink)] dark:text-white">{result.title}</span>
+            </button>
+          ))}
+          <button
+            type="submit"
+            onClick={inline ? handleSubmit : undefined}
+            className="mt-1 w-full border-t border-[color:var(--pub-line)] px-4 pt-2 text-left text-body-sm font-semibold text-[color:var(--pub-ink)] hover:underline dark:text-white"
+          >
+            View all results for &ldquo;{query.trim()}&rdquo;
+          </button>
+        </>
+      )}
+    </div>
+  );
+
+  if (inline) {
+    return (
+      <div ref={containerRef} className="w-full">
+        <form onSubmit={handleSubmit} className="relative">
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--pub-muted)]" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search courses, news, events…"
+            aria-label="Search"
+            className="h-12 w-full rounded-sm border border-[color:var(--pub-line)] bg-[color:var(--pub-paper-tint)] pl-11 pr-4 text-body-sm text-[color:var(--pub-ink)] placeholder:text-[color:var(--pub-muted)] focus:border-gold focus:outline-none dark:text-white"
+          />
+        </form>
+        {suggestionsPanel}
+      </div>
+    );
   }
 
   return (
     <div ref={containerRef} className="relative">
       {open ? (
-        <form onSubmit={handleSubmit} className="flex items-center">
+        <form onSubmit={handleSubmit} className="flex items-center animate-pub-rise-in">
           <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--pub-muted)]" />
             <input
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search courses, news, events..."
-              className="h-10 w-56 rounded-sm border border-[color:var(--color-border)] bg-[color:var(--color-surface)] pl-9 pr-8 text-body-sm sm:w-72"
+              placeholder="Search courses, news, events…"
+              className="h-10 w-56 rounded-sm border border-[color:var(--pub-line)] bg-[color:var(--pub-paper)] pl-9 pr-8 text-body-sm text-[color:var(--pub-ink)] focus:border-gold focus:outline-none dark:text-white sm:w-72"
             />
             <button
               type="button"
@@ -85,48 +154,20 @@ export function SearchBox() {
                 setQuery("");
               }}
               aria-label="Close search"
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-[color:var(--pub-muted)] hover:text-[color:var(--pub-ink)] dark:hover:text-white"
             >
               <X className="h-4 w-4" />
             </button>
           </div>
 
-          {query.trim().length >= 2 && (
-            <div className="absolute left-0 top-full mt-2 w-full min-w-[280px] rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] py-2 shadow-2">
-              {isLoading ? (
-                <p className="px-4 py-3 text-body-sm text-neutral-500">Searching...</p>
-              ) : suggestions.length === 0 ? (
-                <p className="px-4 py-3 text-body-sm text-neutral-500">No matches found.</p>
-              ) : (
-                <>
-                  {suggestions.map((result, i) => (
-                    <button
-                      key={`${result.type}-${i}`}
-                      type="button"
-                      onClick={() => handleSelect(result)}
-                      className="flex w-full flex-col items-start gap-0.5 px-4 py-2 text-left hover:bg-navy/5 dark:hover:bg-white/10"
-                    >
-                      <span className={cn("text-caption font-medium uppercase tracking-wide text-gold")}>{SEARCH_TYPE_LABEL[result.type]}</span>
-                      <span className="text-body-sm text-[color:var(--color-text)]">{result.title}</span>
-                    </button>
-                  ))}
-                  <button
-                    type="submit"
-                    className="mt-1 w-full border-t border-[color:var(--color-border)] px-4 pt-2 text-left text-body-sm font-semibold text-navy hover:underline dark:text-gold"
-                  >
-                    View all results for "{query.trim()}"
-                  </button>
-                </>
-              )}
-            </div>
-          )}
+          {suggestionsPanel}
         </form>
       ) : (
         <button
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Open search"
-          className="rounded p-2 text-navy hover:bg-navy/5 dark:text-white dark:hover:bg-white/10"
+          className="rounded-sm p-2 text-[color:var(--pub-ink)] transition-colors hover:bg-[color:var(--pub-paper-tint)] dark:text-white dark:hover:bg-white/10"
         >
           <Search className="h-5 w-5" />
         </button>

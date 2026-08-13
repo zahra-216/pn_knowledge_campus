@@ -3,21 +3,20 @@
 namespace App\Http\Controllers\Api\V1\Inquiries;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Inquiries\AddInquiryNoteRequest;
+use App\Http\Requests\Inquiries\AssignInquiryRequest;
 use App\Http\Requests\Inquiries\InquiryRequest;
 use App\Http\Requests\Inquiries\UpdateInquiryStatusRequest;
 use App\Http\Resources\InquiryAdminResource;
 use App\Http\Resources\InquiryResource;
 use App\Models\Inquiry;
-use App\Models\Setting;
-use App\Notifications\InquiryConfirmationNotification;
-use App\Notifications\NewInquiryNotification;
+use App\Models\User;
 use App\Support\ApiResponse;
+use App\Support\InquiryNotifier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Notification;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -47,7 +46,7 @@ class InquiryController extends Controller
             'status' => 'new',
         ]);
 
-        $this->sendNotifications($inquiry);
+        InquiryNotifier::send($inquiry);
 
         return ApiResponse::success(new InquiryResource($inquiry), 201);
     }
@@ -56,14 +55,39 @@ class InquiryController extends Controller
     // Admin (authenticated, inquiries.* gated)
     // ------------------------------------------------------------------
 
+    /**
+     * GET /api/v1/admin/inquiries/assignable-staff — audit fix (High
+     * remediation), backs the assignment dropdown. Deliberately not the
+     * general /admin/users list: that's gated by users.view, which only
+     * Super Admin holds (see UserPolicy) — Administrator/Admissions
+     * both need to assign inquiries to each other without needing
+     * Super-Admin-only user-management access. Scoped to whoever
+     * actually holds inquiries.manage, the same population "assign to a
+     * staff member" means in practice.
+     */
+    public function assignableStaff(): JsonResponse
+    {
+        Gate::authorize('manage', Inquiry::class);
+
+        $staff = User::permission('inquiries.manage')->orderBy('name')->get(['id', 'name']);
+
+        return ApiResponse::success($staff->map(fn (User $user) => ['id' => $user->id, 'name' => $user->name])->all());
+    }
+
     public function index(Request $request): JsonResponse
     {
         Gate::authorize('viewAny', Inquiry::class);
 
         $inquiries = Inquiry::query()
-            ->with('course')
+            ->with(['course', 'assignedTo'])
             ->when($request->filled('filter.status'), fn ($q) => $q->where('status', $request->input('filter.status')))
             ->when($request->filled('filter.course'), fn ($q) => $q->where('course_id', $request->input('filter.course')))
+            ->when($request->has('filter.assigned_to'), function ($query) use ($request) {
+                // filter[assigned_to]=0 means "unassigned" — a plain
+                // `?filled()` check would treat "0" as empty and skip it.
+                $value = $request->input('filter.assigned_to');
+                $value ? $query->where('assigned_to', $value) : $query->whereNull('assigned_to');
+            })
             ->when($request->filled('search'), function ($query) use ($request) {
                 $term = $request->string('search');
                 $query->where(fn ($q) => $q
@@ -81,7 +105,7 @@ class InquiryController extends Controller
     {
         Gate::authorize('viewAny', Inquiry::class);
 
-        return ApiResponse::success(new InquiryAdminResource($inquiry->load('course')));
+        return ApiResponse::success(new InquiryAdminResource($inquiry->load(['course', 'assignedTo', 'notes.author'])));
     }
 
     public function updateStatus(UpdateInquiryStatusRequest $request, Inquiry $inquiry): JsonResponse
@@ -90,7 +114,43 @@ class InquiryController extends Controller
 
         $inquiry->update(['status' => $request->validated('status')]);
 
-        return ApiResponse::success(new InquiryAdminResource($inquiry->fresh('course')));
+        return ApiResponse::success(new InquiryAdminResource($inquiry->fresh(['course', 'assignedTo', 'notes.author'])));
+    }
+
+    /**
+     * PATCH /api/v1/admin/inquiries/{inquiry}/assign — audit fix (High
+     * remediation). `assigned_to: null` unassigns; both the SRS
+     * ("optional assignment to a staff member") and the Database Design
+     * document specify this as part of the Inquiry Management module,
+     * never implemented until now.
+     */
+    public function assign(AssignInquiryRequest $request, Inquiry $inquiry): JsonResponse
+    {
+        Gate::authorize('manage', Inquiry::class);
+
+        $inquiry->update(['assigned_to' => $request->validated('assigned_to')]);
+
+        return ApiResponse::success(new InquiryAdminResource($inquiry->fresh(['course', 'assignedTo', 'notes.author'])));
+    }
+
+    /**
+     * POST /api/v1/admin/inquiries/{inquiry}/notes — audit fix (High
+     * remediation). The Database Design document's other missing half
+     * of this module — a staff follow-up note thread, never implemented
+     * until now. Notes are create-only (no edit/delete endpoint) —
+     * consistent with an audit-trail-style log of what staff did, not an
+     * editable document.
+     */
+    public function addNote(AddInquiryNoteRequest $request, Inquiry $inquiry): JsonResponse
+    {
+        Gate::authorize('manage', Inquiry::class);
+
+        $inquiry->notes()->create([
+            'user_id' => $request->user()->id,
+            'body' => $request->validated('body'),
+        ]);
+
+        return ApiResponse::success(new InquiryAdminResource($inquiry->fresh(['course', 'assignedTo', 'notes.author'])), 201);
     }
 
     /** Deletes a single inquiry — the "clean up spam" action. */
@@ -110,6 +170,16 @@ class InquiryController extends Controller
         $inquiries = Inquiry::query()
             ->with('course')
             ->when($request->filled('filter.status'), fn ($q) => $q->where('status', $request->input('filter.status')))
+            // Audit fix (Medium remediation) — see ApplicationController::export()'s
+            // identical fix; this export previously ignored the same
+            // `search` param index() applies.
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $term = $request->string('search');
+                $query->where(fn ($q) => $q
+                    ->where('name', 'like', "%{$term}%")
+                    ->orWhere('email', 'like', "%{$term}%")
+                    ->orWhere('message', 'like', "%{$term}%"));
+            })
             ->orderBy('created_at')
             ->get();
 
@@ -133,28 +203,5 @@ class InquiryController extends Controller
 
             fclose($out);
         }, 'inquiries-'.now()->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv']);
-    }
-
-    /**
-     * Both notifications are queued (ShouldQueue) — dispatching just
-     * inserts a `jobs` row, so a bad SMTP config can no longer fail this
-     * request at all; any delivery failure surfaces later as a
-     * `failed_jobs` row instead. The try/catch here only guards against
-     * a failure in dispatch itself (e.g. a malformed notifiable).
-     */
-    private function sendNotifications(Inquiry $inquiry): void
-    {
-        try {
-            $staffEmail = Setting::where('key', 'admissions_email')->value('value')
-                ?: Setting::where('key', 'contact_email')->value('value');
-
-            if ($staffEmail) {
-                Notification::route('mail', $staffEmail)->notify(new NewInquiryNotification($inquiry));
-            }
-
-            Notification::route('mail', $inquiry->email)->notify(new InquiryConfirmationNotification($inquiry));
-        } catch (\Throwable $e) {
-            Log::warning('Inquiry notification dispatch failed.', ['inquiry_id' => $inquiry->id, 'error' => $e->getMessage()]);
-        }
     }
 }

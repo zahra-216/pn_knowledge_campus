@@ -37,3 +37,18 @@ Schedule::command(PublishScheduledEvents::class)->everyMinute();
 // so newly published/unpublished content is reflected without needing
 // a manual `php artisan sitemap:generate` run after every change.
 Schedule::command(GenerateSitemap::class)->daily();
+
+// Audit fix (Critical remediation) — the SRS explicitly gates go-live on
+// "automated daily database backups and a documented restore procedure"
+// (Roadmap Stage 10); this project had neither. `backup:run` dumps the
+// database plus storage/app/public and storage/app/private (see
+// config/backup.php's docblock for why not the whole codebase — git
+// covers that now); `backup:clean` prunes old ones per the retention
+// policy in config/backup.php's 'cleanup' section; `backup:monitor`
+// fails loudly (and emails, per config/backup.php's 'notifications')
+// if a backup goes missing or the destination disk fills up, so a
+// silently-broken backup pipeline doesn't go unnoticed for months. See
+// DEPLOYMENT.md's "Backups & Restore" section for the restore steps.
+Schedule::command('backup:clean')->daily()->at('01:30');
+Schedule::command('backup:run')->daily()->at('02:00');
+Schedule::command('backup:monitor')->daily()->at('03:00');

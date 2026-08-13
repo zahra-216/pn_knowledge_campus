@@ -8,6 +8,7 @@ use App\Http\Resources\HeroSlideResource;
 use App\Models\HeroSlide;
 use App\Models\Media;
 use App\Support\ApiResponse;
+use App\Support\PublicCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -40,6 +41,9 @@ class HeroSlideController extends Controller
 
         $this->attachMedia($slide, $request->input('media_id'));
 
+        // Audit fix (Medium remediation) — see TestimonialController's docblock.
+        PublicCache::forgetHomepage();
+
         return ApiResponse::success(new HeroSlideResource($slide->fresh()), 201);
     }
 
@@ -60,6 +64,8 @@ class HeroSlideController extends Controller
             $this->attachMedia($heroSlide, $request->input('media_id'));
         }
 
+        PublicCache::forgetHomepage();
+
         return ApiResponse::success(new HeroSlideResource($heroSlide->fresh()));
     }
 
@@ -68,6 +74,8 @@ class HeroSlideController extends Controller
         Gate::authorize('delete', HeroSlide::class);
 
         $heroSlide->delete();
+
+        PublicCache::forgetHomepage();
 
         return response()->noContent();
     }

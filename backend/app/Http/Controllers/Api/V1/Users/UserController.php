@@ -103,6 +103,24 @@ class UserController extends Controller
     }
 
     /**
+     * POST /api/v1/admin/users/{user}/revoke-tokens — audit fix
+     * (Medium remediation). Sanctum tokens now expire on their own
+     * (see config/sanctum.php), but that's a 30-day ceiling, not an
+     * incident-response tool — this deletes every one of the user's
+     * existing personal access tokens immediately, forcing a fresh
+     * login on every device/session, the same "revoke all sessions"
+     * action any admin panel needs for a suspected-compromised account.
+     */
+    public function revokeTokens(User $user): JsonResponse
+    {
+        Gate::authorize('update', User::class);
+
+        $user->tokens()->delete();
+
+        return ApiResponse::success(new UserResource($user->fresh()));
+    }
+
+    /**
      * Losing every Super Admin would mean nobody left holding the
      * users, settings, or roles permission groups — an unrecoverable
      * lockout without direct database access. $newRole === null means

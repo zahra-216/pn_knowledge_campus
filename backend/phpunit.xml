@@ -23,7 +23,12 @@
             is available, unlike the dev .env's MySQL connection.
         -->
         <env name="APP_ENV" value="testing"/>
-        <env name="APP_KEY" value="base64:phpunitDummyKeyGeneratedForTestingOnly1234="/>
+        <!-- A real 32-byte key, not just a placeholder string — audit
+             fix: the old dummy value here decoded to the wrong length
+             and only ever went unexercised because no test previously
+             touched the 'web' middleware group (session/cookie
+             encryption); routes/web.php's SEO shell is the first to. -->
+        <env name="APP_KEY" value="base64:BryCiuansZvur1GXiEKfbyxMJxMUNET4DMjItAhk+4I="/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="CACHE_STORE" value="array"/>

@@ -18,7 +18,7 @@ class HeroSlideSeeder extends Seeder
     public function run(): void
     {
         HeroSlide::firstOrCreate(
-            ['title' => 'Welcome to PN Knowledge Campus'],
+            ['title' => 'Welcome to PNK Global Campus'],
             ['subtitle' => 'Building futures through knowledge, character, and community.', 'cta_text' => 'Explore Courses', 'cta_url' => '/courses', 'order' => 0]
         );
 

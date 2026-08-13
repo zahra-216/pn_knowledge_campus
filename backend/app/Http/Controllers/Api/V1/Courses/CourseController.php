@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Api\V1\Courses;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Courses\CourseMediaRequest;
 use App\Http\Requests\Courses\CourseRequest;
+use App\Http\Resources\CourseListResource;
 use App\Http\Resources\CourseResource;
 use App\Models\Course;
 use App\Models\Media;
 use App\Support\ApiResponse;
+use App\Support\PublicCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -23,7 +25,13 @@ use Illuminate\Support\Facades\Gate;
  */
 class CourseController extends Controller
 {
-    private const WITH = ['faculty', 'department', 'level', 'mode', 'category'];
+    // 'media' (audit fix, Medium remediation) — CourseResource calls
+    // getFirstMedia()/getMedia() for featured_image/gallery/downloads;
+    // eager-loading the whole 'media' relation here means Spatie's own
+    // getMedia() reads from it instead of firing one query per row
+    // (see InteractsWithMedia::loadMedia(), which prefers $this->media
+    // when the relation is already loaded).
+    private const WITH = ['faculty', 'department', 'level', 'mode', 'category', 'media'];
 
     private const WITH_DETAIL = [...self::WITH, 'topLevelCurriculumItems.children', 'faqs'];
 
@@ -62,6 +70,9 @@ class CourseController extends Controller
             return $course;
         });
 
+        // Audit fix (Medium remediation) — see TestimonialController's docblock.
+        PublicCache::forgetHomepage();
+
         return ApiResponse::success(new CourseResource($course->fresh()->load(self::WITH_DETAIL)), 201);
     }
 
@@ -86,6 +97,8 @@ class CourseController extends Controller
             $this->syncSeo($course, $request);
         });
 
+        PublicCache::forgetHomepage();
+
         return ApiResponse::success(new CourseResource($course->fresh()->load(self::WITH_DETAIL)));
     }
 
@@ -97,6 +110,8 @@ class CourseController extends Controller
         Gate::authorize('delete', Course::class);
 
         $course->delete();
+
+        PublicCache::forgetHomepage();
 
         return response()->noContent();
     }
@@ -113,6 +128,8 @@ class CourseController extends Controller
             'status' => 'published',
             'published_at' => $course->published_at ?? Carbon::now(),
         ]);
+
+        PublicCache::forgetHomepage();
 
         return ApiResponse::success(new CourseResource($course->fresh()->load(self::WITH_DETAIL)));
     }
@@ -155,8 +172,8 @@ class CourseController extends Controller
 
     /**
      * GET /api/v1/courses — public, unauthenticated. Published only;
-     * filter[faculty]/[department]/[level]/[mode] by slug/id, featured=1,
-     * search (API Design, Section 7.1).
+     * filter[faculty]/[department]/[level]/[mode]/[category] by slug/id,
+     * featured=1, search (API Design, Section 7.1).
      */
     public function publicIndex(Request $request): JsonResponse
     {
@@ -168,12 +185,13 @@ class CourseController extends Controller
             ->when(! empty($filters['department']), fn ($q) => $q->whereHas('department', fn ($dq) => $dq->where('slug', $filters['department'])))
             ->when(! empty($filters['level']), fn ($q) => $q->whereHas('level', fn ($lq) => $lq->where('slug', $filters['level'])))
             ->when(! empty($filters['mode']), fn ($q) => $q->whereHas('mode', fn ($mq) => $mq->where('slug', $filters['mode'])))
+            ->when(! empty($filters['category']), fn ($q) => $q->whereHas('category', fn ($cq) => $cq->where('slug', $filters['category'])))
             ->when($request->boolean('featured') || ($filters['featured'] ?? null) == 1, fn ($q) => $q->where('is_featured', true))
             ->when($request->filled('search'), fn ($q) => $q->where('course_name', 'like', '%'.$request->string('search').'%'))
             ->orderBy('order')
             ->paginate($request->integer('per_page', 12));
 
-        return ApiResponse::success(CourseResource::collection($courses));
+        return ApiResponse::success(CourseListResource::collection($courses));
     }
 
     /**
