@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import type { ApiError, ApiResponse } from "@/types/api";
+import { cacheKey, getCached } from "@/lib/requestCache";
 
 /**
  * One hook backs every public detail page (Course/Blog/News/Event/
@@ -20,8 +21,7 @@ export function usePublicDetail<T>(endpoint: string | null) {
     setError(null);
     setData(null);
 
-    api
-      .get<ApiResponse<T>>(endpoint)
+    getCached(cacheKey(endpoint), () => api.get<ApiResponse<T>>(endpoint))
       .then(({ data }) => {
         if (!cancelled) setData(data.data);
       })

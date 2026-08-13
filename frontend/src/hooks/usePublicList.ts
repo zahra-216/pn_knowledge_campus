@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import type { ApiCollection, ApiError, PaginationMeta } from "@/types/api";
+import { cacheKey, getCached } from "@/lib/requestCache";
 
 export type ListParams = Record<string, string | number | boolean | undefined>;
 
@@ -11,7 +12,7 @@ export type ListParams = Record<string, string | number | boolean | undefined>;
  * params they pass. Re-fetches whenever `endpoint` or the serialized
  * `params` change (so changing a filter/page number refetches).
  */
-export function usePublicList<T>(endpoint: string, params?: ListParams) {
+export function usePublicList<T>(endpoint: string | null, params?: ListParams) {
   const [items, setItems] = useState<T[]>([]);
   const [meta, setMeta] = useState<PaginationMeta | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -19,12 +20,12 @@ export function usePublicList<T>(endpoint: string, params?: ListParams) {
   const paramsKey = JSON.stringify(params ?? {});
 
   useEffect(() => {
+    if (!endpoint) return;
     let cancelled = false;
     setIsLoading(true);
     setError(null);
 
-    api
-      .get<ApiCollection<T>>(endpoint, { params })
+    getCached(cacheKey(endpoint, params), () => api.get<ApiCollection<T>>(endpoint, { params }))
       .then(({ data }) => {
         if (cancelled) return;
         setItems(data.data);

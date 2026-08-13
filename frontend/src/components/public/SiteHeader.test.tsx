@@ -6,6 +6,7 @@ import { ToastProvider } from "@/components/ui";
 import { PublicSettingsProvider } from "@/hooks/usePublicSettings";
 import { api } from "@/lib/api";
 import type { Menu, MenuItem } from "@/types/menu";
+import { clearRequestCache } from "@/lib/requestCache";
 
 vi.mock("@/lib/api", () => ({
   api: {
@@ -47,6 +48,11 @@ function menuItem(overrides: Partial<MenuItem>): MenuItem {
 describe("SiteHeader visible_on filtering", () => {
   beforeEach(() => {
     vi.mocked(api.get).mockReset();
+    // The shared request cache (requestCache.ts) is module-level by design —
+    // that's what makes repeat navigation instant in the real app — but it
+    // means each test needs a clean slate or it'll see the previous test's
+    // mocked response instead of its own.
+    clearRequestCache();
   });
 
   function mockMenu(items: MenuItem[]) {

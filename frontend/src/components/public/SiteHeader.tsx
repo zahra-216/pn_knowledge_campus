@@ -98,11 +98,29 @@ export function SiteHeader() {
   // Backs the mega menu's "always current" columns (see resolveDynamicChildren
   // above) — fetched once here rather than per nav item, since HeaderNavItem
   // renders one instance per top-level item and hooks can't be conditional.
-  const { data: allFaculties } = usePublicDetail<Faculty[]>(ENDPOINTS.faculties.publicList);
-  const { data: allDepartments } = usePublicDetail<Department[]>(ENDPOINTS.departments.publicList);
-  const { data: allCategories } = usePublicDetail<CourseCategory[]>(ENDPOINTS.courseCategories.public);
-  const { data: allLevels } = usePublicDetail<CourseLookup[]>(ENDPOINTS.courseLevels.public);
-  const { items: allCourses } = usePublicList<Course>(ENDPOINTS.courses.publicList, { per_page: 100 });
+  //
+  // Perf fix: these five calls (including a 100-item course list) used to
+  // fire unconditionally on every single page load, whether or not anyone
+  // ever opened the mega menu — the single biggest contributor to the
+  // request pile-up and spinner on first paint. They're now gated behind
+  // `megaMenuNeeded`, set true the first time the user actually interacts
+  // with the nav (hover/focus/tap), and stay true afterwards so opening a
+  // second dropdown doesn't refetch. The shared request cache in
+  // requestCache.ts means opening the menu still feels instant on repeat
+  // visits within the same session.
+  const [megaMenuNeeded, setMegaMenuNeeded] = useState(false);
+  const { data: allFaculties } = usePublicDetail<Faculty[]>(megaMenuNeeded ? ENDPOINTS.faculties.publicList : null);
+  const { data: allDepartments } = usePublicDetail<Department[]>(
+    megaMenuNeeded ? ENDPOINTS.departments.publicList : null,
+  );
+  const { data: allCategories } = usePublicDetail<CourseCategory[]>(
+    megaMenuNeeded ? ENDPOINTS.courseCategories.public : null,
+  );
+  const { data: allLevels } = usePublicDetail<CourseLookup[]>(megaMenuNeeded ? ENDPOINTS.courseLevels.public : null);
+  const { items: allCourses } = usePublicList<Course>(
+    megaMenuNeeded ? ENDPOINTS.courses.publicList : null,
+    { per_page: 100 },
+  );
   const dynamicMenuData: DynamicMenuData = {
     faculties: allFaculties ?? [],
     departments: allDepartments ?? [],
@@ -122,6 +140,7 @@ export function SiteHeader() {
 
   useEffect(() => {
     if (!mobileOpen) return;
+    setMegaMenuNeeded(true); // mobile drawer shows the same dynamic columns, so it needs the data too
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
@@ -199,7 +218,12 @@ export function SiteHeader() {
             )}
           </Link>
 
-          <nav className="hidden items-center gap-1 lg:flex" aria-label="Primary">
+          <nav
+            className="hidden items-center gap-1 lg:flex"
+            aria-label="Primary"
+            onMouseEnter={() => setMegaMenuNeeded(true)}
+            onFocus={() => setMegaMenuNeeded(true)}
+          >
             {desktopItems.map((item) => (
               <HeaderNavItem key={item.id} item={item} scrolled={scrolled} dynamicMenuData={dynamicMenuData} />
             ))}
