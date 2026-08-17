@@ -179,7 +179,7 @@ export function SiteHeader() {
     <>
       <header
         className={cn(
-          "sticky top-0 z-40 bg-[color:var(--pub-paper)]/90 backdrop-blur-md transition-shadow duration-300",
+          "sticky top-0 z-40 bg-[color:var(--pub-paper)] transition-shadow duration-300",
           scrolled ? "shadow-[0_1px_0_0_var(--pub-line)]" : "shadow-none"
         )}
       >

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, CalendarDays, GraduationCap, Landmark } from "lucide-react";
+import { ArrowRight, CalendarDays, GraduationCap, Newspaper } from "lucide-react";
 import { usePublicDetail } from "@/hooks/usePublicDetail";
 import { usePublicSettings } from "@/hooks/usePublicSettings";
 import { useResolvedMedia } from "@/hooks/useResolvedMedia";
@@ -14,8 +14,8 @@ import { Container } from "@/components/public/Container";
 import { SectionHeading } from "@/components/public/SectionHeading";
 import { Reveal } from "@/components/public/Reveal";
 import { StatementBand } from "@/components/public/StatementBand";
+import { ImagePlaceholder } from "@/components/public/ImagePlaceholder";
 import type { HomepageContentSection, HeroSlide, Testimonial, Partner } from "@/types/homepage";
-import type { Faculty } from "@/types/faculty";
 import type { Course } from "@/types/course";
 import type { NewsArticle } from "@/types/news";
 import type { CampusEvent } from "@/types/event";
@@ -81,9 +81,6 @@ function HomeSection({ section }: { section: HomepageContentSection }) {
     case "welcome":
       return <WelcomeSection content={section.content ?? {}} />;
 
-    case "faculties":
-      return <FacultiesSection items={(section.items as Faculty[]) ?? []} />;
-
     case "featured_courses":
       return <ProgrammesSection items={(section.items as Course[]) ?? []} />;
 
@@ -143,120 +140,45 @@ function WelcomeSection({ content }: { content: Record<string, unknown> }) {
 
 function ProgrammesSection({ items }: { items: Course[] }) {
   if (items.length === 0) return null;
-  const [lead, ...rest] = items;
 
   return (
     <section className="py-[var(--space-md)]">
       <Container size="wide" className="flex flex-col gap-10">
         <Reveal>
-          <SectionHeading eyebrow="Programmes" title="Featured Courses" viewAllTo="/courses" viewAllLabel="View all courses" />
+          <SectionHeading eyebrow="Programmes" title="Our Courses" viewAllTo="/courses" viewAllLabel="View all courses" />
         </Reveal>
 
-        <div className="grid gap-10 lg:grid-cols-12">
-          <Reveal className="lg:col-span-6">
-            <Link to={`/courses/${lead.slug}`} className="group flex h-full flex-col">
-              <div className="relative aspect-[16/10] w-full overflow-hidden bg-[color:var(--pub-paper-tint)]">
-                {lead.featured_image_url ? (
-                  <img
-                    src={lead.featured_image_url}
-                    alt=""
-                    loading="lazy"
-                    decoding="async"
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-[color:var(--pub-muted)]">
-                    <GraduationCap className="h-10 w-10" aria-hidden="true" />
-                  </div>
-                )}
-              </div>
-              <div className="mt-5 flex flex-col gap-2">
-                <p className="text-caption font-semibold uppercase tracking-wide text-gold">{metaLine([lead.faculty?.name, lead.duration])}</p>
-                <h3 className="font-display text-h3 font-medium text-[color:var(--pub-ink)] group-hover:text-gold dark:text-white">
-                  {lead.course_name}
-                </h3>
-                <p className="line-clamp-2 max-w-xl text-body text-[color:var(--pub-muted)]">{lead.overview}</p>
-                <span className="mt-1 inline-flex items-center gap-2 text-body-sm font-semibold text-[color:var(--pub-ink)] dark:text-white">
-                  Explore programme <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                </span>
-              </div>
-            </Link>
-          </Reveal>
-
-          {rest.length > 0 && (
-            <Reveal delay={100} className="lg:col-span-6">
-              <ul className="flex flex-col divide-y divide-[color:var(--pub-line)] border-t border-[color:var(--pub-line)]">
-                {rest.map((course) => (
-                  <li key={course.id}>
-                    <Link to={`/courses/${course.slug}`} className="group flex items-center gap-4 py-5">
-                      <div className="h-16 w-20 flex-none overflow-hidden bg-[color:var(--pub-paper-tint)]">
-                        {course.featured_image_url && (
-                          <img src={course.featured_image_url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
-                        )}
-                      </div>
-                      <div className="flex min-w-0 flex-col gap-1">
-                        <p className="truncate text-caption font-medium uppercase tracking-wide text-[color:var(--pub-muted)]">
-                          {course.faculty?.name}
-                        </p>
-                        <p className="truncate font-display text-h4 font-medium text-[color:var(--pub-ink)] group-hover:text-gold dark:text-white">
-                          {course.course_name}
-                        </p>
-                      </div>
-                      <ArrowRight className="ml-auto h-4 w-4 flex-none text-[color:var(--pub-muted)] transition-transform group-hover:translate-x-1 group-hover:text-gold" />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+        <div className="grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+          {items.map((course, i) => (
+            <Reveal key={course.id} delay={i * 60}>
+              <Link to={`/courses/${course.slug}`} className="group flex h-full flex-col">
+                <div className="relative aspect-[4/3] w-full overflow-hidden bg-[color:var(--pub-paper-tint)]">
+                  {course.featured_image_url ? (
+                    <img
+                      src={course.featured_image_url}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                    />
+                  ) : (
+                    <ImagePlaceholder icon={GraduationCap} />
+                  )}
+                </div>
+                <div className="mt-5 flex flex-col gap-2">
+                  <p className="text-caption font-semibold uppercase tracking-wide text-gold">
+                    {metaLine([course.category?.name, course.duration])}
+                  </p>
+                  <h3 className="font-display text-h4 font-medium text-[color:var(--pub-ink)] group-hover:text-gold dark:text-white">
+                    {course.course_name}
+                  </h3>
+                  <span className="mt-1 inline-flex items-center gap-2 text-body-sm font-semibold text-[color:var(--pub-ink)] dark:text-white">
+                    View course <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </span>
+                </div>
+              </Link>
             </Reveal>
-          )}
-        </div>
-      </Container>
-    </section>
-  );
-}
-
-function FacultiesSection({ items }: { items: Faculty[] }) {
-  if (items.length === 0) return null;
-
-  return (
-    <section className="bg-[color:var(--pub-paper-tint)] py-[var(--space-md)]">
-      <Container size="wide" className="flex flex-col gap-10">
-        <Reveal>
-          <SectionHeading eyebrow="Academics" title="Our Faculties" viewAllTo="/faculties" viewAllLabel="View all faculties" />
-        </Reveal>
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          {items.map((faculty, i) => {
-            const image = faculty.banner_url ?? faculty.icon_url;
-            return (
-              <Reveal key={faculty.id} delay={i * 70}>
-                <Link to={`/faculties/${faculty.slug}`} className="group flex h-full flex-col">
-                  <div className="relative aspect-[3/4] w-full overflow-hidden bg-[color:var(--pub-paper)]">
-                    {image ? (
-                      <img
-                        src={image}
-                        alt=""
-                        loading="lazy"
-                        decoding="async"
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-[color:var(--pub-muted)]">
-                        <Landmark className="h-8 w-8" aria-hidden="true" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="mt-4 flex flex-col gap-1">
-                    <h3 className="font-display text-h4 font-medium text-[color:var(--pub-ink)] group-hover:text-gold dark:text-white">
-                      {faculty.name}
-                    </h3>
-                    {faculty.short_description && (
-                      <p className="line-clamp-2 text-body-sm text-[color:var(--pub-muted)]">{faculty.short_description}</p>
-                    )}
-                  </div>
-                </Link>
-              </Reveal>
-            );
-          })}
+          ))}
         </div>
       </Container>
     </section>
@@ -278,7 +200,7 @@ function NewsSection({ items }: { items: NewsArticle[] }) {
           <Reveal className="lg:col-span-5">
             <Link to={`/news/${lead.slug}`} className="group flex h-full flex-col">
               <div className="relative aspect-[4/3] w-full overflow-hidden bg-[color:var(--pub-paper-tint)]">
-                {lead.featured_image_url && (
+                {lead.featured_image_url ? (
                   <img
                     src={lead.featured_image_url}
                     alt=""
@@ -286,6 +208,8 @@ function NewsSection({ items }: { items: NewsArticle[] }) {
                     decoding="async"
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                   />
+                ) : (
+                  <ImagePlaceholder icon={Newspaper} />
                 )}
               </div>
               <div className="mt-5 flex flex-col gap-2">
@@ -350,9 +274,7 @@ function EventsSection({ items }: { items: CampusEvent[] }) {
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center text-[color:var(--pub-muted)]">
-                        <CalendarDays className="h-8 w-8" aria-hidden="true" />
-                      </div>
+                      <ImagePlaceholder icon={CalendarDays} />
                     )}
                     <div className="absolute left-0 top-0 flex flex-col items-center bg-[color:var(--pub-ink)] px-4 py-2 leading-none text-white">
                       <span className="font-display text-h3 font-medium tabular-nums">{date.getDate()}</span>
@@ -442,10 +364,10 @@ function PartnersSection({ items }: { items: Partner[] }) {
   if (items.length === 0) return null;
 
   return (
-    <section className="py-[var(--space-sm)]">
-      <Container size="wide" className="flex flex-col items-center gap-8">
+    <section className="bg-[color:var(--pub-paper-tint)] py-[var(--space-md)]">
+      <Container size="wide" className="flex flex-col items-center gap-10">
         <p className="text-caption font-semibold uppercase tracking-[0.14em] text-[color:var(--pub-muted)]">In Partnership With</p>
-        <div className="flex flex-wrap items-center justify-center gap-x-14 gap-y-8">
+        <div className="grid w-full grid-cols-2 gap-4 sm:grid-cols-4">
           {items.map((p) =>
             p.logo_url ? (
               <a
@@ -453,14 +375,19 @@ function PartnersSection({ items }: { items: Partner[] }) {
                 href={p.url ?? undefined}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="opacity-60 grayscale transition-all duration-300 hover:opacity-100 hover:grayscale-0"
+                className="flex h-24 items-center justify-center rounded-sm border border-[color:var(--pub-line)] bg-[color:var(--pub-paper)] px-6 opacity-70 grayscale transition-all duration-300 hover:opacity-100 hover:grayscale-0"
               >
                 <img src={p.logo_url} alt={p.name} loading="lazy" decoding="async" className="h-9 w-auto" />
               </a>
             ) : (
-              <span key={p.id} className="text-body-sm text-[color:var(--pub-muted)]">
-                {p.name}
-              </span>
+              <div
+                key={p.id}
+                className="flex h-24 items-center justify-center rounded-sm border border-[color:var(--pub-line)] bg-[color:var(--pub-paper)] px-4 text-center"
+              >
+                <span className="font-display text-body font-medium text-[color:var(--pub-ink)] dark:text-white">
+                  {p.name}
+                </span>
+              </div>
             )
           )}
         </div>

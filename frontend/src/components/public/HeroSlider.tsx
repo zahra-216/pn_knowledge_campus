@@ -37,11 +37,11 @@ export function HeroSlider({ slides }: { slides: HeroSlide[] }) {
 
   return (
     <section
-      className="relative w-full overflow-hidden bg-[color:var(--pub-ink)] min-h-[clamp(560px,88vh,880px)]"
+      className="relative w-full overflow-hidden bg-[color:var(--pub-ink)] min-h-[clamp(420px,65vh,640px)]"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      {slide.image_url && (
+      {slide.image_url ? (
         <img
           key={slide.id}
           src={slide.image_url}
@@ -49,10 +49,30 @@ export function HeroSlider({ slides }: { slides: HeroSlide[] }) {
           aria-hidden="true"
           className="absolute inset-0 h-full w-full object-cover animate-pub-fade-in"
         />
+      ) : (
+        // No hero photo uploaded yet — an intentional abstract brand
+        // treatment (gradient + dot-grid + concentric rings) rather than
+        // a flat void, using only navy/gold tokens. Swaps out automatically
+        // once an editor sets an image on this slide.
+        <div key={slide.id} className="absolute inset-0 animate-pub-fade-in" aria-hidden="true">
+          <div className="absolute inset-0 bg-gradient-to-br from-navy-dark via-[color:var(--pub-ink)] to-navy" />
+          <div
+            className="absolute inset-0 opacity-[0.06]"
+            style={{ backgroundImage: "radial-gradient(#ffffff 1px, transparent 1px)", backgroundSize: "28px 28px" }}
+          />
+          <div className="absolute -right-16 -top-24 h-[380px] w-[380px] rounded-full border border-gold/15" />
+          <div className="absolute -right-40 top-10 h-[560px] w-[560px] rounded-full border border-gold/10" />
+          <div className="absolute -bottom-24 right-4 h-[260px] w-[260px] rounded-full bg-gold/[0.07] blur-3xl" />
+        </div>
       )}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t to-transparent",
+          slide.image_url ? "from-black/85 via-black/25" : "from-black/35 via-black/5"
+        )}
+      />
 
-      <div className="relative flex min-h-[clamp(560px,88vh,880px)] flex-col justify-end">
+      <div className="relative flex min-h-[clamp(420px,65vh,640px)] flex-col justify-end">
         <Container size="wide" className="flex flex-col gap-8 pb-14 pt-24 sm:pb-20">
           <Reveal key={slide.id} className="flex flex-col gap-5">
             <h1 className="max-w-4xl text-balance font-display text-hero font-medium text-white">{slide.title}</h1>

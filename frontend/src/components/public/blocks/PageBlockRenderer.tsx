@@ -101,6 +101,39 @@ function Block({ block, media }: { block: PageBlock; media: ReturnType<typeof us
         />
       );
 
+    case "chairman_message": {
+      const data = block.data as { media_id?: number; name?: string; role?: string; message?: string };
+      const photo = data.media_id ? media.get(data.media_id) : undefined;
+      return (
+        <section className="py-[var(--space-lg)]">
+          <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 sm:px-6 lg:px-8 md:flex-row md:items-stretch">
+            {photo && (
+              <div className="flex-shrink-0 md:w-[28rem]">
+                <img
+                  src={photo.url}
+                  alt={data.name ?? ""}
+                  loading="lazy"
+                  decoding="async"
+                  className="h-72 w-full rounded-lg object-cover md:h-full"
+                />
+              </div>
+            )}
+            <div className="flex flex-col justify-center gap-4 text-center md:text-left">
+              {data.message && (
+                <p className="whitespace-pre-line text-body-lg italic text-[color:var(--color-text)]">{data.message}</p>
+              )}
+              {(data.name || data.role) && (
+                <footer>
+                  {data.name && <p className="font-display text-h4 font-medium text-[color:var(--color-text)]">{data.name}</p>}
+                  {data.role && <p className="text-body-sm text-neutral-500">{data.role}</p>}
+                </footer>
+              )}
+            </div>
+          </div>
+        </section>
+      );
+    }
+
     case "image": {
       const data = block.data as unknown as ImageBlockData;
       const image = data.media_id ? media.get(data.media_id) : undefined;

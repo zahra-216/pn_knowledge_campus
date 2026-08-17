@@ -31,8 +31,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
         "disabled:cursor-not-allowed disabled:opacity-50",
         size === "md" ? "h-10 px-4 text-body-sm" : "h-8 px-3 text-caption",
         variant === "primary" && "bg-navy text-white hover:bg-navy-light active:bg-navy-dark",
-        variant === "secondary" && "border border-navy text-navy hover:bg-navy/5 active:bg-navy/10",
-        variant === "ghost" && "text-navy hover:bg-navy/5 active:bg-navy/10",
+        variant === "secondary" &&
+          "border border-navy text-navy hover:bg-navy/5 active:bg-navy/10 dark:border-white/25 dark:text-white dark:hover:bg-white/10 dark:active:bg-white/15",
+        variant === "ghost" && "text-navy hover:bg-navy/5 active:bg-navy/10 dark:text-white dark:hover:bg-white/10 dark:active:bg-white/15",
         variant === "danger" && "bg-danger text-white hover:opacity-90 active:opacity-80",
         className
       )}
