@@ -1,13 +1,9 @@
 import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin, Youtube, Globe } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { usePublicDetail } from "@/hooks/usePublicDetail";
 import { usePublicSettings } from "@/hooks/usePublicSettings";
 import { useResolvedMedia } from "@/hooks/useResolvedMedia";
-import { ENDPOINTS } from "@/lib/endpoints";
 import { SmartLink } from "@/components/public/SmartLink";
 import { Container } from "@/components/public/Container";
-import type { Menu } from "@/types/menu";
-import type { SocialLink } from "@/types/socialLink";
 
 const PLATFORM_ICON: Record<string, LucideIcon> = {
   facebook: Facebook,
@@ -24,9 +20,7 @@ const PLATFORM_ICON: Record<string, LucideIcon> = {
 const ALLOWED_QUICK_LINK_LABELS = ["About", "News", "Contact", "Privacy Policy"];
 
 export function SiteFooter() {
-  const { data: menu } = usePublicDetail<Menu>(ENDPOINTS.menus.public("footer"));
-  const { data: socialLinks } = usePublicDetail<SocialLink[]>(ENDPOINTS.socialLinks.public);
-  const { settings, isLoading: settingsLoading } = usePublicSettings();
+  const { settings, isLoading: settingsLoading, footerMenu: menu, socialLinks } = usePublicSettings();
   const logoMediaId = settings.logo_media_id as number | undefined;
   const resolvedMedia = useResolvedMedia([logoMediaId]);
   const logo = resolvedMedia.get(logoMediaId as number);

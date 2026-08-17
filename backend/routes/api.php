@@ -343,6 +343,7 @@ Route::prefix('v1')->group(function () {
         Route::get('social-links', [SocialLinkController::class, 'publicIndex']);
         Route::get('office-hours', [OfficeHourController::class, 'publicIndex']);
         Route::get('menus/{key}', [MenuController::class, 'publicShow']);
+        Route::get('public/bootstrap', [\App\Http\Controllers\Api\V1\PublicBootstrapController::class, 'show']);
         Route::get('pages/{slug}', [PageController::class, 'publicShow']);
         Route::get('homepage', [HomepageController::class, 'show']);
         Route::get('hero-slides', [HeroSlideController::class, 'publicIndex']);

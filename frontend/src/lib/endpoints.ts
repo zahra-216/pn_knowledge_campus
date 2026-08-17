@@ -30,6 +30,9 @@ export const ENDPOINTS = {
     admin: (id?: number) => (id ? `/admin/social-links/${id}` : "/admin/social-links"),
     public: "/social-links",
   },
+  publicBootstrap: {
+    get: "/public/bootstrap",
+  },
   media: {
     list: "/admin/media",
     upload: "/admin/media",

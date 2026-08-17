@@ -9,7 +9,7 @@ import { ENDPOINTS } from "@/lib/endpoints";
 import { cn } from "@/utils/cn";
 import { SearchBox } from "@/components/public/SearchBox";
 import { Container } from "@/components/public/Container";
-import type { Menu, MenuItem } from "@/types/menu";
+import type { MenuItem } from "@/types/menu";
 import type { Faculty } from "@/types/faculty";
 import type { Department } from "@/types/department";
 import type { Course, CourseCategory, CourseLookup } from "@/types/course";
@@ -88,8 +88,7 @@ function isMenuItemActive(item: MenuItem, pathname: string): boolean {
  * in lockstep with each other (see the inline note below).
  */
 export function SiteHeader() {
-  const { data: menu } = usePublicDetail<Menu>(ENDPOINTS.menus.public("header"));
-  const { settings, isLoading: settingsLoading } = usePublicSettings();
+  const { settings, isLoading: settingsLoading, headerMenu: menu } = usePublicSettings();
   const logoMediaId = settings.logo_media_id as number | undefined;
   const resolvedMedia = useResolvedMedia([logoMediaId]);
   const [mobileOpen, setMobileOpen] = useState(false);
