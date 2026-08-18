@@ -23,6 +23,7 @@ const BLOCK_TYPE_LABELS: Record<BlockType, string> = {
   statistics: "Statistics",
   testimonials: "Testimonials",
   partners: "Partners",
+  chairman_message: "Chairman Message",
 };
 
 const DEFAULT_DATA: Record<BlockType, Record<string, unknown>> = {
@@ -37,6 +38,7 @@ const DEFAULT_DATA: Record<BlockType, Record<string, unknown>> = {
   statistics: { items: [] },
   testimonials: { items: [] },
   partners: { items: [] },
+  chairman_message: { heading: "", name: "", role: "", message: "", media_id: null },
 };
 
 /**
