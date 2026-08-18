@@ -228,18 +228,6 @@ export function SiteHeader() {
             ))}
           </nav>
 
-          <div className="hidden items-center gap-1 lg:flex">
-            <SearchBox />
-            <a
-              href="https://lms.pnkgcampus.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="ml-2 inline-flex h-10 items-center justify-center gap-2 rounded bg-gold px-4 font-sans text-body-sm font-semibold text-navy-dark transition-colors duration-150 hover:bg-gold-tint focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold focus-visible:outline-offset-2"
-            >
-              Student LMS Login
-            </a>
-          </div>
-
           <div className="flex items-center gap-1 lg:hidden">
             <SearchBox />
             <button
@@ -280,17 +268,6 @@ export function SiteHeader() {
               ))}
             </nav>
 
-            <div className="border-t border-[color:var(--pub-line)] p-6">
-              <a
-                href="https://lms.pnkgcampus.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setMobileOpen(false)}
-                className="flex h-10 w-full items-center justify-center gap-2 rounded bg-gold px-4 font-sans text-body-sm font-semibold text-navy-dark transition-colors duration-150 hover:bg-gold-tint"
-              >
-                Student LMS Login
-              </a>
-            </div>
           </div>
         </div>
       )}

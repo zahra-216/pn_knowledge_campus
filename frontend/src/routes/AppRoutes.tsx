@@ -80,6 +80,10 @@ const InternationalStudents = lazy(() =>
   import("@/pages/public/InternationalStudents").then((m) => ({ default: m.InternationalStudents }))
 );
 const StudentLife = lazy(() => import("@/pages/public/StudentLife").then((m) => ({ default: m.StudentLife })));
+const Examination = lazy(() => import("@/pages/public/Examination").then((m) => ({ default: m.Examination })));
+const CertificateVerification = lazy(() =>
+  import("@/pages/public/CertificateVerification").then((m) => ({ default: m.CertificateVerification }))
+);
 const PrivacyPolicy = lazy(() => import("@/pages/public/PrivacyPolicy").then((m) => ({ default: m.PrivacyPolicy })));
 const Terms = lazy(() => import("@/pages/public/Terms").then((m) => ({ default: m.Terms })));
 const RefundPolicy = lazy(() => import("@/pages/public/RefundPolicy").then((m) => ({ default: m.RefundPolicy })));
@@ -195,6 +199,8 @@ export function AppRoutes() {
           <Route path="how-to-apply" element={<HowToApply />} />
           <Route path="international-students" element={<InternationalStudents />} />
           <Route path="student-life" element={<StudentLife />} />
+          <Route path="student-life/examination" element={<Examination />} />
+          <Route path="student-life/certificate-verification" element={<CertificateVerification />} />
           <Route path="privacy-policy" element={<PrivacyPolicy />} />
           <Route path="terms" element={<Terms />} />
           <Route path="refund-policy" element={<RefundPolicy />} />
