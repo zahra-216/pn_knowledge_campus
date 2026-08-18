@@ -4,6 +4,7 @@ import { SmartLink } from "@/components/public/SmartLink";
 import { cn } from "@/utils/cn";
 import { RICH_TEXT_CLASSNAME } from "@/utils/richText";
 import type {
+  ChairmanMessageBlockData,
   CtaBlockData,
   FaqItem,
   GalleryBlockData,
@@ -41,17 +42,70 @@ function toEmbedUrl(source: "youtube" | "vimeo", url: string): string {
   return match ? `https://player.vimeo.com/video/${match[1]}` : url;
 }
 
+/** Splits a "text" block's body on its first blank line into a heading + rest, e.g. "Our Vision\n\nTo be..." */
+function splitHeadingBody(body: string): { heading: string | null; rest: string } {
+  const match = body.match(/^(.+?)\n\n([\s\S]*)$/);
+  if (!match) return { heading: null, rest: body };
+  return { heading: match[1].trim(), rest: match[2].trim() };
+}
+
 /** Renders a Page's ordered, active blocks — one component per `block_type`, matching the Page Builder's own 11 shapes exactly. */
 export function PageBlockRenderer({ blocks }: { blocks: PageBlock[] }) {
   const media = useResolvedMedia(collectMediaIds(blocks));
   const active = blocks.filter((b) => b.is_active).sort((a, b) => a.order - b.order);
 
+  // Consecutive "text" blocks (e.g. Vision + Mission) render together as a
+  // side-by-side card grid instead of stacked full-width paragraphs. A
+  // lone "text" block still renders on its own via the default case.
+  const groups: PageBlock[][] = [];
+  for (const block of active) {
+    const prevGroup = groups[groups.length - 1];
+    if (block.block_type === "text" && prevGroup?.[0]?.block_type === "text") {
+      prevGroup.push(block);
+    } else {
+      groups.push([block]);
+    }
+  }
+
   return (
     <div className="flex flex-col">
-      {active.map((block) => (
-        <Block key={block.id} block={block} media={media} />
-      ))}
+      {groups.map((group) =>
+        group.length > 1 ? (
+          <TextCardGrid key={group[0].id} blocks={group} />
+        ) : (
+          <Block key={group[0].id} block={group[0]} media={media} />
+        )
+      )}
     </div>
+  );
+}
+
+function TextCardGrid({ blocks }: { blocks: PageBlock[] }) {
+  return (
+    <section className="py-10">
+      <div
+        className={cn(
+          "mx-auto grid max-w-5xl gap-6 px-4 sm:px-6 lg:px-8",
+          blocks.length === 2 ? "sm:grid-cols-2" : blocks.length === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2"
+        )}
+      >
+        {blocks.map((block) => {
+          const { heading, rest } = splitHeadingBody(block.data.body as string);
+          return (
+            <div
+              key={block.id}
+              className="rounded-xl border border-[color:var(--pub-line)] bg-[color:var(--pub-paper)] p-6"
+            >
+              <span className="block h-1 w-10 rounded-full bg-gold" />
+              {heading && (
+                <h3 className="mt-4 font-display text-h4 font-semibold text-[color:var(--color-text)]">{heading}</h3>
+              )}
+              <p className="mt-2 text-body leading-relaxed text-neutral-600 dark:text-white/70">{rest}</p>
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
@@ -61,11 +115,11 @@ function Block({ block, media }: { block: PageBlock; media: ReturnType<typeof us
       const data = block.data as unknown as HeroBlockData;
       const image = data.media_id ? media.get(data.media_id) : undefined;
       return (
-        <section className="relative flex min-h-[360px] items-center overflow-hidden bg-navy text-white">
+        <section className="relative flex min-h-[280px] items-center overflow-hidden bg-navy text-white">
           {image && <img src={image.url} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-40" />}
           <div
             className={cn(
-              "relative mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-20",
+              "relative mx-auto flex w-full max-w-5xl flex-col gap-3 px-4 py-14",
               data.alignment === "left" && "items-start text-left",
               data.alignment === "right" && "items-end text-right",
               (!data.alignment || data.alignment === "center") && "items-center text-center"
@@ -86,48 +140,65 @@ function Block({ block, media }: { block: PageBlock; media: ReturnType<typeof us
       );
     }
 
-    case "text":
+    case "text": {
+      const { heading, rest } = splitHeadingBody(block.data.body as string);
       return (
-        <div className="mx-auto max-w-3xl px-4 py-10 text-body text-[color:var(--color-text)]">
-          <p className="whitespace-pre-line">{block.data.body as string}</p>
+        <div className="mx-auto max-w-3xl px-4 py-8 text-body text-[color:var(--color-text)]">
+          {heading && <h2 className="mb-2 font-display text-h3 font-semibold">{heading}</h2>}
+          <p className="whitespace-pre-line">{rest}</p>
         </div>
       );
+    }
 
     case "rich_text":
       return (
         <div
-          className={cn("mx-auto max-w-3xl px-4 py-10", RICH_TEXT_CLASSNAME)}
+          className={cn("mx-auto max-w-3xl px-4 py-8", RICH_TEXT_CLASSNAME)}
           dangerouslySetInnerHTML={{ __html: block.data.body as string }}
         />
       );
 
     case "chairman_message": {
-      const data = block.data as { media_id?: number; name?: string; role?: string; message?: string };
+      const data = block.data as unknown as ChairmanMessageBlockData;
       const photo = data.media_id ? media.get(data.media_id) : undefined;
+      const isManager = /manager/i.test(data.role ?? "");
+      const heading = data.heading ?? (isManager ? "A Message from Our Manager" : "A Message from Our Chairman");
+
       return (
-        <section className="py-[var(--space-lg)]">
-          <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 sm:px-6 lg:px-8 md:flex-row md:items-stretch">
-            {photo && (
-              <div className="flex-shrink-0 md:w-[28rem]">
-                <img
-                  src={photo.url}
-                  alt={data.name ?? ""}
-                  loading="lazy"
-                  decoding="async"
-                  className="h-72 w-full rounded-lg object-cover md:h-full"
-                />
+        <section className={cn("py-12", isManager && "bg-[color:var(--pub-paper-tint)]")}>
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+            <div className="mb-6 text-center md:text-left">
+              <span className="font-sans text-caption font-semibold uppercase tracking-widest text-gold">Leadership</span>
+              <h2 className="mt-1 font-display text-h2 font-semibold text-[color:var(--color-text)]">{heading}</h2>
+            </div>
+            <div className={cn("flex flex-col gap-8 md:items-stretch", isManager ? "md:flex-row-reverse" : "md:flex-row")}>
+              {photo && (
+                <div className="flex-shrink-0 md:w-[24rem]">
+                  <img
+                    src={photo.url}
+                    alt={data.name ?? ""}
+                    loading="lazy"
+                    decoding="async"
+                    className="h-72 w-full rounded-2xl object-cover shadow-2 md:h-full"
+                  />
+                </div>
+              )}
+              <div className="relative flex flex-col justify-center gap-4">
+                <span aria-hidden="true" className="font-display text-h1 leading-none text-gold/30">
+                  &ldquo;
+                </span>
+                {data.message && (
+                  <p className="-mt-6 whitespace-pre-line text-body leading-relaxed text-[color:var(--color-text)]">
+                    {data.message}
+                  </p>
+                )}
+                {(data.name || data.role) && (
+                  <footer className="border-t border-[color:var(--pub-line)] pt-3">
+                    {data.name && <p className="font-display text-h4 font-medium text-[color:var(--color-text)]">{data.name}</p>}
+                    {data.role && <p className="text-body-sm text-neutral-500">{data.role}</p>}
+                  </footer>
+                )}
               </div>
-            )}
-            <div className="flex flex-col justify-center gap-4 text-center md:text-left">
-              {data.message && (
-                <p className="whitespace-pre-line text-body-lg italic text-[color:var(--color-text)]">{data.message}</p>
-              )}
-              {(data.name || data.role) && (
-                <footer>
-                  {data.name && <p className="font-display text-h4 font-medium text-[color:var(--color-text)]">{data.name}</p>}
-                  {data.role && <p className="text-body-sm text-neutral-500">{data.role}</p>}
-                </footer>
-              )}
             </div>
           </div>
         </section>
@@ -139,7 +210,7 @@ function Block({ block, media }: { block: PageBlock; media: ReturnType<typeof us
       const image = data.media_id ? media.get(data.media_id) : undefined;
       if (!image) return null;
       return (
-        <figure className="mx-auto max-w-4xl px-4 py-10">
+        <figure className="mx-auto max-w-4xl px-4 py-8">
           <img src={image.url} alt={data.caption ?? ""} loading="lazy" decoding="async" className="w-full rounded-lg" />
           {data.caption && <figcaption className="mt-2 text-center text-body-sm text-neutral-500">{data.caption}</figcaption>}
         </figure>
@@ -149,7 +220,7 @@ function Block({ block, media }: { block: PageBlock; media: ReturnType<typeof us
     case "gallery": {
       const data = block.data as unknown as GalleryBlockData;
       return (
-        <div className="mx-auto max-w-6xl px-4 py-10">
+        <div className="mx-auto max-w-6xl px-4 py-8">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {data.media_ids.map((id) => {
               const item = media.get(id);
@@ -167,7 +238,7 @@ function Block({ block, media }: { block: PageBlock; media: ReturnType<typeof us
       const data = block.data as unknown as VideoBlockData;
       const uploaded = data.source === "upload" && data.media_id ? media.get(data.media_id) : undefined;
       return (
-        <div className="mx-auto max-w-4xl px-4 py-10">
+        <div className="mx-auto max-w-4xl px-4 py-8">
           <div className="aspect-video overflow-hidden rounded-lg bg-black">
             {data.source === "upload" ? (
               uploaded && <video src={uploaded.url} controls className="h-full w-full" />
@@ -191,7 +262,7 @@ function Block({ block, media }: { block: PageBlock; media: ReturnType<typeof us
       const data = block.data as unknown as CtaBlockData;
       const isPrimary = (data.style ?? "primary") === "primary";
       return (
-        <section className={cn("px-4 py-14 text-center", isPrimary ? "bg-navy text-white" : "bg-gold/10")}>
+        <section className={cn("px-4 py-12 text-center", isPrimary ? "bg-navy text-white" : "bg-gold/10")}>
           <div className="mx-auto flex max-w-2xl flex-col items-center gap-3">
             <h2 className="font-display text-h2 font-semibold">{data.heading}</h2>
             {data.body && <p className={cn("text-body", isPrimary ? "text-white/85" : "text-neutral-600")}>{data.body}</p>}
@@ -213,7 +284,7 @@ function Block({ block, media }: { block: PageBlock; media: ReturnType<typeof us
       const items = (block.data.items as FaqItem[]) ?? [];
       if (items.length === 0) return null;
       return (
-        <div className="mx-auto max-w-3xl px-4 py-10">
+        <div className="mx-auto max-w-3xl px-4 py-8">
           <Accordion items={items.map((item, i) => ({ id: i, question: item.question, answer: item.answer }))} />
         </div>
       );
@@ -222,7 +293,7 @@ function Block({ block, media }: { block: PageBlock; media: ReturnType<typeof us
     case "statistics": {
       const items = (block.data.items as StatisticItem[]) ?? [];
       return (
-        <div className="mx-auto grid max-w-5xl grid-cols-2 gap-6 px-4 py-14 sm:grid-cols-4">
+        <div className="mx-auto grid max-w-5xl grid-cols-2 gap-6 px-4 py-12 sm:grid-cols-4">
           {items.map((item, i) => (
             <div key={i} className="flex flex-col items-center text-center">
               <span className="font-display text-h1 font-semibold text-navy dark:text-white">{item.value}</span>
@@ -236,7 +307,7 @@ function Block({ block, media }: { block: PageBlock; media: ReturnType<typeof us
     case "testimonials": {
       const items = (block.data.items as TestimonialItem[]) ?? [];
       return (
-        <div className="mx-auto grid max-w-5xl gap-6 px-4 py-14 sm:grid-cols-2">
+        <div className="mx-auto grid max-w-5xl gap-6 px-4 py-12 sm:grid-cols-2">
           {items.map((item, i) => {
             const avatar = item.avatar_media_id ? media.get(item.avatar_media_id) : undefined;
             return (
@@ -259,7 +330,7 @@ function Block({ block, media }: { block: PageBlock; media: ReturnType<typeof us
     case "partners": {
       const items = (block.data.items as PartnerItem[]) ?? [];
       return (
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-10 px-4 py-14">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-10 px-4 py-12">
           {items.map((item, i) => {
             const logo = item.logo_media_id ? media.get(item.logo_media_id) : undefined;
             const content = logo ? (

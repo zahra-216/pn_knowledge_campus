@@ -99,3 +99,11 @@ export interface PageBlockPayload {
   order?: number;
   is_active?: boolean;
 }
+
+export interface ChairmanMessageBlockData {
+  heading?: string | null;
+  name: string;
+  role?: string | null;
+  message: string;
+  media_id?: number | null;
+}

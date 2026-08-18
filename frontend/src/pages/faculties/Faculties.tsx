@@ -97,7 +97,7 @@ export function Faculties() {
       header: "",
       render: (f) => (
         <div className="flex gap-3">
-          <button type="button" onClick={() => navigate(`/admin/faculties/${f.id}`)} className="text-body-sm text-navy hover:underline">
+          <button type="button" onClick={() => navigate(`/admin/faculties/${f.id}`)} className="text-body-sm text-gold hover:underline">
             Edit
           </button>
           {canDelete && (
