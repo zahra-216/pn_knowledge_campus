@@ -21,7 +21,7 @@ const ALLOWED_QUICK_LINK_LABELS = ["About", "News", "Contact", "Privacy Policy"]
 
 export function SiteFooter() {
   const { settings, isLoading: settingsLoading, footerMenu: menu, socialLinks } = usePublicSettings();
-  const logoMediaId = settings.logo_media_id as number | undefined;
+  const logoMediaId = settings.logo_media_id != null ? Number(settings.logo_media_id) : undefined;
   const resolvedMedia = useResolvedMedia([logoMediaId]);
   const logo = resolvedMedia.get(logoMediaId as number);
   const brandStillLoading = settingsLoading || (!!logoMediaId && !logo);
@@ -84,23 +84,33 @@ export function SiteFooter() {
           <p className="text-caption font-semibold uppercase tracking-[0.14em] text-gold">Contact</p>
           <div className="flex flex-col gap-2 text-body-sm text-white/70">
             {(settings.contact_address as string) && (
-            <span className="flex items-start gap-2">
-              <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-white/40" />
-              {settings.contact_address as string}
-            </span>
-          )}
-          {(settings.contact_phone as string) && (
-            <a href={`tel:${settings.contact_phone}`} className="flex items-center gap-2 hover:text-white">
-              <Phone className="h-4 w-4 flex-shrink-0 text-white/40" />
-              {settings.contact_phone as string}
-            </a>
-          )}
-          {(settings.contact_email as string) && (
-            <a href={`mailto:${settings.contact_email}`} className="flex items-center gap-2 hover:text-white">
-              <Mail className="h-4 w-4 flex-shrink-0 text-white/40" />
-              {settings.contact_email as string}
+              <span className="flex items-start gap-2">
+                <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-white/40" />
+                {settings.contact_address as string}
+              </span>
+            )}
+            {(settings.contact_phone as string) &&
+              (settings.contact_phone as string)
+                .split(",")
+                .map((phone) => phone.trim())
+                .filter(Boolean)
+                .map((phone, i) => (
+                  <a key={phone} href={`tel:${phone}`} className="flex items-center gap-2 hover:text-white">
+                    {i === 0 ? <Phone className="h-4 w-4 flex-shrink-0 text-white/40" /> : <span className="h-4 w-4 flex-shrink-0" />}
+                    {phone}
                   </a>
-        )}
+                ))}
+            {(settings.contact_email as string) &&
+              (settings.contact_email as string)
+                .split(",")
+                .map((email) => email.trim())
+                .filter(Boolean)
+                .map((email, i) => (
+                  <a key={email} href={`mailto:${email}`} className="flex items-center gap-2 hover:text-white">
+                    {i === 0 ? <Mail className="h-4 w-4 flex-shrink-0 text-white/40" /> : <span className="h-4 w-4 flex-shrink-0" />}
+                    {email}
+                  </a>
+                ))}
         </div>
       </div>
       </Container>

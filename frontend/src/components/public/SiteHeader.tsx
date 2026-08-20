@@ -89,7 +89,7 @@ function isMenuItemActive(item: MenuItem, pathname: string): boolean {
  */
 export function SiteHeader() {
   const { settings, isLoading: settingsLoading, headerMenu: menu } = usePublicSettings();
-  const logoMediaId = settings.logo_media_id as number | undefined;
+  const logoMediaId = settings.logo_media_id != null ? Number(settings.logo_media_id) : undefined;
   const resolvedMedia = useResolvedMedia([logoMediaId]);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
