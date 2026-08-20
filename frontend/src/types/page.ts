@@ -69,6 +69,7 @@ export interface PartnerItem {
 export interface DirectorItem {
   name: string;
   position: string;
+  qualifications?: string | null;
   photo_media_id: number | null;
 }
 
@@ -110,6 +111,8 @@ export interface ChairmanMessageBlockData {
   heading?: string | null;
   name: string;
   role?: string | null;
+  qualifications?: string | null;
   message: string;
   media_id?: number | null;
 }
+

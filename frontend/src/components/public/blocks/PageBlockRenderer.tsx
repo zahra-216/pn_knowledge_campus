@@ -117,7 +117,7 @@ function Block({ block, media }: { block: PageBlock; media: ReturnType<typeof us
       const data = block.data as unknown as HeroBlockData;
       const image = data.media_id ? media.get(data.media_id) : undefined;
       return (
-        <section className="relative flex min-h-[340px] items-center overflow-hidden bg-gradient-to-br from-navy via-navy-dark to-navy text-white">
+        <section className="relative flex min-h-[220px] items-center overflow-hidden bg-gradient-to-br from-navy via-navy-dark to-navy text-white">
           {image ? (
             <>
               <img src={image.url} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover" />
@@ -132,7 +132,7 @@ function Block({ block, media }: { block: PageBlock; media: ReturnType<typeof us
           )}
           <div
             className={cn(
-              "relative mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-20",
+              "relative mx-auto flex w-full max-w-5xl flex-col gap-3 px-4 py-12",
               data.alignment === "left" && "items-start text-left",
               data.alignment === "right" && "items-end text-right",
               (!data.alignment || data.alignment === "center") && "items-center text-center"
@@ -210,6 +210,7 @@ function Block({ block, media }: { block: PageBlock; media: ReturnType<typeof us
                   <footer className="border-t border-[color:var(--pub-line)] pt-3">
                     {data.name && <p className="font-display text-h4 font-medium text-[color:var(--color-text)]">{data.name}</p>}
                     {data.role && <p className="text-body-sm text-neutral-500">{data.role}</p>}
+                    {data.qualifications && <p className="text-caption text-neutral-400">{data.qualifications}</p>}
                   </footer>
                 )}
               </div>
@@ -391,6 +392,7 @@ function Block({ block, media }: { block: PageBlock; media: ReturnType<typeof us
                     <div className="p-4 text-center">
                       <p className="font-display text-h4 font-medium text-[color:var(--color-text)]">{item.name}</p>
                       <p className="text-body-sm text-neutral-500">{item.position}</p>
+                      {item.qualifications && <p className="mt-1 text-caption text-neutral-400">{item.qualifications}</p>}
                     </div>
                   </div>
                 );

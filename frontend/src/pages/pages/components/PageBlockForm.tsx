@@ -39,7 +39,7 @@ const DEFAULT_DATA: Record<BlockType, Record<string, unknown>> = {
   statistics: { items: [] },
   testimonials: { items: [] },
   partners: { items: [] },
-  chairman_message: { heading: "", name: "", role: "", message: "", media_id: null },
+  chairman_message: { heading: "", name: "", role: "", qualifications: "", message: "", media_id: null },
   management_board: { items: [] },
 };
 
@@ -226,6 +226,7 @@ function BlockFields({
             onChange={(e) => setField("role", e.target.value)}
             hint='Include the word "Manager" to render this as the Manager layout instead of Chairman.'
           />
+          <Input label="Qualifications (optional)" value={str("qualifications")} onChange={(e) => setField("qualifications", e.target.value)} hint="e.g. MBA, BSc (Hons) Engineering" />
           <Textarea label="Message" value={str("message")} onChange={(e) => setField("message", e.target.value)} rows={6} required />
           <MediaIdField label="Photo" type="image" mediaId={num("media_id")} onChange={(id) => setField("media_id", id)} />
         </>
@@ -319,6 +320,7 @@ function BlockFields({
             fields={[
               { key: "name", label: "Name", kind: "text" },
               { key: "position", label: "Position", kind: "text" },
+              { key: "qualifications", label: "Qualifications (optional)", kind: "text" },
               { key: "photo_media_id", label: "Photo (portrait, 4:5 works best)", kind: "media" },
             ]}
           />
