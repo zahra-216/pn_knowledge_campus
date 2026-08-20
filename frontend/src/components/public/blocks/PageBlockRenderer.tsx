@@ -6,6 +6,7 @@ import { RICH_TEXT_CLASSNAME } from "@/utils/richText";
 import type {
   ChairmanMessageBlockData,
   CtaBlockData,
+  DirectorItem,
   FaqItem,
   GalleryBlockData,
   HeroBlockData,
@@ -27,6 +28,7 @@ function collectMediaIds(blocks: PageBlock[]): number[] {
       for (const item of d.items as Record<string, unknown>[]) {
         if (typeof item.avatar_media_id === "number") ids.push(item.avatar_media_id);
         if (typeof item.logo_media_id === "number") ids.push(item.logo_media_id);
+        if (typeof item.photo_media_id === "number") ids.push(item.photo_media_id);
       }
     }
   }
@@ -349,6 +351,41 @@ function Block({ block, media }: { block: PageBlock; media: ReturnType<typeof us
         </div>
       );
     }
+
+    case "management_board": {
+    const items = (block.data.items as DirectorItem[]) ?? [];
+    if (items.length === 0) return null;
+    return (
+      <section className="py-12">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <div className="mb-8 text-center">
+            <span className="font-sans text-caption font-semibold uppercase tracking-widest text-gold">Leadership</span>
+            <h2 className="mt-1 font-display text-h2 font-semibold text-[color:var(--color-text)]">Management Board</h2>
+          </div>
+          <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:grid-cols-4">
+            {items.map((item, i) => {
+              const photo = item.photo_media_id ? media.get(item.photo_media_id) : undefined;
+              return (
+                <div key={i} className="flex flex-col items-center text-center">
+                  {photo && (
+                    <img
+                      src={photo.url}
+                      alt={item.name}
+                      loading="lazy"
+                      decoding="async"
+                      className="h-32 w-32 rounded-full object-cover shadow-2"
+                    />
+                  )}
+                  <p className="mt-4 font-display text-h4 font-medium text-[color:var(--color-text)]">{item.name}</p>
+                  <p className="text-body-sm text-neutral-500">{item.position}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
     default:
       return null;

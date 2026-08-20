@@ -1,7 +1,7 @@
 import type { SeoMeta } from "@/types/seo";
 
 /** Matches config('page-blocks.types') on the backend. */
-export type BlockType = "hero" | "text" | "rich_text" | "image" | "gallery" | "video" | "cta" | "faq" | "statistics" | "testimonials" | "partners" | "chairman_message";
+export type BlockType = "hero" | "text" | "rich_text" | "image" | "gallery" | "video" | "cta" | "faq" | "statistics" | "testimonials" | "partners" | "chairman_message" | "management_board";
 
 export type PageStatus = "draft" | "published" | "scheduled" | "archived";
 
@@ -64,6 +64,12 @@ export interface PartnerItem {
   name: string;
   logo_media_id: number | null;
   url?: string | null;
+}
+
+export interface DirectorItem {
+  name: string;
+  position: string;
+  photo_media_id: number | null;
 }
 
 /** Matches PageBlockResource on the backend. `data`'s real shape depends on `block_type`. */

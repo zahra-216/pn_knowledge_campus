@@ -23,5 +23,7 @@ return [
         'statistics',
         'testimonials',
         'partners',
+        'chairman_message',
+        'management_board',
     ],
 ];

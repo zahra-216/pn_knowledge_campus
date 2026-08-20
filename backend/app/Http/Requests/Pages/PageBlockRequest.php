@@ -101,6 +101,19 @@ class PageBlockRequest extends FormRequest
                 'data.items.*.logo_media_id' => ['required', 'integer', 'exists:media,id'],
                 'data.items.*.url' => ['nullable', 'string', 'max:255'],
             ],
+            'chairman_message' => [
+                'data.heading' => ['nullable', 'string', 'max:200'],
+                'data.name' => ['required', 'string', 'max:100'],
+                'data.role' => ['nullable', 'string', 'max:100'],
+                'data.message' => ['required', 'string'],
+                'data.media_id' => ['nullable', 'integer', 'exists:media,id'],
+            ],
+            'management_board' => [
+                'data.items' => ['required', 'array', 'min:1'],
+                'data.items.*.name' => ['required', 'string', 'max:100'],
+                'data.items.*.position' => ['required', 'string', 'max:100'],
+                'data.items.*.photo_media_id' => ['nullable', 'integer', 'exists:media,id'],
+            ],
             default => [],
         };
     }

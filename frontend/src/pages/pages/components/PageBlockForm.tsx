@@ -24,6 +24,7 @@ const BLOCK_TYPE_LABELS: Record<BlockType, string> = {
   testimonials: "Testimonials",
   partners: "Partners",
   chairman_message: "Chairman Message",
+  management_board: "Management Board",
 };
 
 const DEFAULT_DATA: Record<BlockType, Record<string, unknown>> = {
@@ -39,6 +40,7 @@ const DEFAULT_DATA: Record<BlockType, Record<string, unknown>> = {
   testimonials: { items: [] },
   partners: { items: [] },
   chairman_message: { heading: "", name: "", role: "", message: "", media_id: null },
+  management_board: { items: [] },
 };
 
 /**
@@ -213,6 +215,22 @@ function BlockFields({
         </>
       );
 
+    case "chairman_message":
+      return (
+        <>
+          <Input label="Heading (optional)" value={str("heading")} onChange={(e) => setField("heading", e.target.value)} />
+          <Input label="Name" value={str("name")} onChange={(e) => setField("name", e.target.value)} required />
+          <Input
+            label="Role"
+            value={str("role")}
+            onChange={(e) => setField("role", e.target.value)}
+            hint='Include the word "Manager" to render this as the Manager layout instead of Chairman.'
+          />
+          <Textarea label="Message" value={str("message")} onChange={(e) => setField("message", e.target.value)} rows={6} required />
+          <MediaIdField label="Photo" type="image" mediaId={num("media_id")} onChange={(id) => setField("media_id", id)} />
+        </>
+      );
+
     case "cta":
       return (
         <>
@@ -291,6 +309,20 @@ function BlockFields({
           ]}
         />
       );
+
+      case "management_board":
+        return (
+          <RepeatableItemsEditor
+            items={(data.items as Record<string, string | number | null>[]) ?? []}
+            onChange={(items) => setField("items", items)}
+            addLabel="Add Director"
+            fields={[
+              { key: "name", label: "Name", kind: "text" },
+              { key: "position", label: "Position", kind: "text" },
+              { key: "photo_media_id", label: "Photo", kind: "media" },
+            ]}
+          />
+        );
 
     default:
       return null;
