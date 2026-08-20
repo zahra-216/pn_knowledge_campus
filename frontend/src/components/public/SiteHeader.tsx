@@ -28,16 +28,6 @@ function flattenCategories(categories: CourseCategory[]): CourseCategory[] {
   return categories.flatMap((c) => [c, ...(c.children ?? [])]);
 }
 
-/**
- * A handful of mega-menu columns (Faculties, Departments, "Browse by
- * Category" under Courses, and each of the 4 course-level columns) are
- * meant to always mirror live CMS data rather than a manually curated
- * list — adding/removing a faculty, department, category, or course
- * should show up here without an admin having to remember to also edit
- * the Menu Builder. Recognised by the column's own `custom_url`, which
- * already encodes exactly what it should list; anything else falls back
- * to its real, manually-curated `children` from the Menu Builder.
- */
 function resolveDynamicChildren(child: MenuItem, data: DynamicMenuData): MegaMenuLeaf[] | null {
   if (child.custom_url === "/faculties") {
     return data.faculties.map((f) => ({ id: `faculty-${f.id}`, label: f.name, url: `/faculties/${f.slug}` }));
@@ -63,30 +53,11 @@ function resolveDynamicChildren(child: MenuItem, data: DynamicMenuData): MegaMen
   return null;
 }
 
-/**
- * Audit fix (Medium remediation) — a menu item's children are often
- * flat, sibling top-level routes (About's children are /vision,
- * /mission, /chairmans-message — not /about/vision), so NavLink's own
- * prefix-based isActive never lit up the parent while viewing any of
- * them, including "About" itself while sitting on one of its own child
- * pages. Recurses through children/grandchildren (mega-menu columns go
- * one level deeper) checking for an exact pathname match, in addition
- * to the parent's own URL.
- */
 function isMenuItemActive(item: MenuItem, pathname: string): boolean {
   if (item.url && (pathname === item.url || pathname.startsWith(`${item.url}/`))) return true;
   return item.children.some((child) => isMenuItemActive(child, pathname));
 }
 
-/**
- * Public Site Redesign, Stage 1 — quiet until scrolled: a translucent,
- * blurred bar that only gains a hairline shadow and condenses in height
- * once the page scrolls, replacing the old permanent border. Still fully
- * menu-driven (same `header` Menu the admin Menu Builder edits) and the
- * same `visible_on` desktop/mobile contract as before — the mobile drawer
- * is this nav's exact CSS-breakpoint opposite, so both filters must stay
- * in lockstep with each other (see the inline note below).
- */
 export function SiteHeader() {
   const { settings, isLoading: settingsLoading, headerMenu: menu } = usePublicSettings();
   const logoMediaId = settings.logo_media_id != null ? Number(settings.logo_media_id) : undefined;
@@ -94,19 +65,6 @@ export function SiteHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  // Backs the mega menu's "always current" columns (see resolveDynamicChildren
-  // above) — fetched once here rather than per nav item, since HeaderNavItem
-  // renders one instance per top-level item and hooks can't be conditional.
-  //
-  // Perf fix: these five calls (including a 100-item course list) used to
-  // fire unconditionally on every single page load, whether or not anyone
-  // ever opened the mega menu — the single biggest contributor to the
-  // request pile-up and spinner on first paint. They're now gated behind
-  // `megaMenuNeeded`, set true the first time the user actually interacts
-  // with the nav (hover/focus/tap), and stay true afterwards so opening a
-  // second dropdown doesn't refetch. The shared request cache in
-  // requestCache.ts means opening the menu still feels instant on repeat
-  // visits within the same session.
   const [megaMenuNeeded, setMegaMenuNeeded] = useState(false);
   const { data: allFaculties } = usePublicDetail<Faculty[]>(megaMenuNeeded ? ENDPOINTS.faculties.publicList : null);
   const { data: allDepartments } = usePublicDetail<Department[]>(
@@ -148,32 +106,14 @@ export function SiteHeader() {
   }, [mobileOpen]);
 
   const logo = resolvedMedia.get(logoMediaId as number);
-  // While settings are still loading — or the logo id is known but its
-  // media record hasn't resolved yet — render neither the logo nor the
-  // text-wordmark fallback. Showing the fallback first and swapping to
-  // the logo a moment later (or vice versa) is the "comes and
-  // disappears" flash; a neutral placeholder that resolves directly to
-  // its final state avoids it entirely.
   const brandStillLoading = settingsLoading || (!!logoMediaId && !logo);
   const campusName = (settings.campus_short_name as string) || (settings.campus_name as string) || "PNK Global Campus";
   const headerLogoHeight = Number(settings.header_logo_height) || 56;
   const headerLogoHeightScrolled = Math.round(headerLogoHeight * 0.78);
   const items = menu?.items ?? [];
-  // Audit fix (High remediation) — `visible_on` is deliberately left
-  // unfiltered by the API (see MenuController::publicShow()'s docblock):
-  // the viewport, not the server, decides desktop vs mobile. This nav
-  // and the mobile drawer below are each other's CSS breakpoint
-  // opposite, so filtering here is the other half of that contract.
   const desktopItems = items.filter((item) => item.visible_on !== "mobile");
   const mobileItems = items.filter((item) => item.visible_on !== "desktop");
 
-  // The mobile drawer and Enquire modal are deliberately siblings of
-  // <header>, not children — `backdrop-blur-md` below establishes a new
-  // containing block for any `position: fixed` descendant (same rule
-  // that applies to `filter`), which would otherwise squash a `fixed
-  // inset-0` overlay down to the header's own ~80px box instead of the
-  // viewport. Caught by actually opening the drawer in a real browser,
-  // not by typecheck/build/tests, which don't render either overlay open.
   return (
     <>
       <header
@@ -204,8 +144,8 @@ export function SiteHeader() {
               <img
                 src={logo.thumb_url ?? logo.url}
                 alt={campusName}
-                className="w-auto transition-[height] duration-300"
-                style={{ height: scrolled ? headerLogoHeightScrolled : headerLogoHeight }}
+                className="object-contain transition-[height] duration-300"
+                style={{ height: scrolled ? headerLogoHeightScrolled : headerLogoHeight, width: "auto" }}
               />
             ) : (
               <>
@@ -292,15 +232,6 @@ function HeaderNavItem({
   // tell a real mouse hover apart from a keyboard/touch activation.
   const hoverOpenRef = useRef(false);
   const hasChildren = item.children.length > 0;
-
-  // Hover opens/closes the panel for mouse users — the expected desktop
-  // behaviour for a dropdown/mega menu. The chevron button is a separate
-  // fallback for keyboard (Enter/Space) and touch, where hover never
-  // fires, and toggles normally there. It only skips its own toggle when
-  // hoverOpenRef is true, i.e. the pointer is already hovering: a plain
-  // click always follows a mouseenter on the same element, so without
-  // this guard a click on an already hover-opened panel would toggle it
-  // straight back closed.
   function handleMouseEnter() {
     hoverOpenRef.current = true;
     setOpen(true);
@@ -366,21 +297,6 @@ function HeaderNavItem({
     );
   }
 
-  // Split into two independent controls, not one button doing both jobs:
-  // the label is a real link to the item's own page (`item.url` — About,
-  // Academics, Admissions, News & Media all have one, per MenuSeeder —
-  // previously silently unused whenever an item had children, so "About"
-  // etc. had no way to actually be visited), and the chevron is a
-  // separate small button that only opens/closes the submenu.
-  //
-  // `self-stretch` (matched by `items-stretch` up on the header Container
-  // and `h-full` here) makes this box span the full header height, not
-  // just the label's own text height. Without it, there's a dead strip
-  // between the bottom of the label and the top of the panel that
-  // belongs to <nav> instead of this item — moving the mouse straight
-  // down through that strip hands the hover to <nav> (an ancestor, not a
-  // descendant), which fires this item's mouseleave and closes the panel
-  // before the pointer ever reaches it.
   return (
     <div
       ref={containerRef}

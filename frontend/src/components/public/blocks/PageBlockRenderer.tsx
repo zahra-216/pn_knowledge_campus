@@ -193,7 +193,7 @@ function Block({ block, media }: { block: PageBlock; media: ReturnType<typeof us
                     alt={data.name ?? ""}
                     loading="lazy"
                     decoding="async"
-                    className="h-72 w-full rounded-2xl object-cover shadow-2 md:h-full"
+                    className="h-96 w-full rounded-2xl object-cover object-top shadow-2 md:h-full"
                   />
                 </div>
               )}
@@ -389,7 +389,7 @@ function Block({ block, media }: { block: PageBlock; media: ReturnType<typeof us
                         className="aspect-[4/5] w-full object-cover"
                       />
                     )}
-                    <div className="p-4 text-center">
+                    <div className="p-4 text-left">
                       <p className="font-display text-h4 font-medium text-[color:var(--color-text)]">{item.name}</p>
                       <p className="text-body-sm text-neutral-500">{item.position}</p>
                       {item.qualifications && <p className="mt-1 whitespace-pre-line text-caption text-neutral-400">{item.qualifications}</p>}

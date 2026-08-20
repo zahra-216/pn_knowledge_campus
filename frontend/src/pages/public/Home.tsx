@@ -375,14 +375,14 @@ function PartnersSection({ items }: { items: Partner[] }) {
                 href={p.url ?? undefined}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex h-24 items-center justify-center rounded-sm border border-[color:var(--pub-line)] bg-[color:var(--pub-paper)] px-6 opacity-70 grayscale transition-all duration-300 hover:opacity-100 hover:grayscale-0"
+                className="flex h-24 min-w-0 items-center justify-center rounded-sm border border-[color:var(--pub-line)] bg-[color:var(--pub-paper)] px-6 opacity-70 grayscale transition-all duration-300 hover:opacity-100 hover:grayscale-0"
               >
-                <img src={p.logo_url} alt={p.name} loading="lazy" decoding="async" className="h-9 w-auto" />
+                <img src={p.logo_url} alt={p.name} loading="lazy" decoding="async" className="h-9 w-auto max-w-full object-contain" />
               </a>
             ) : (
               <div
                 key={p.id}
-                className="flex h-24 items-center justify-center rounded-sm border border-[color:var(--pub-line)] bg-[color:var(--pub-paper)] px-4 text-center"
+                className="flex h-24 min-w-0 items-center justify-center rounded-sm border border-[color:var(--pub-line)] bg-[color:var(--pub-paper)] px-4 text-center"
               >
                 <span className="font-display text-body font-medium text-[color:var(--pub-ink)] dark:text-white">
                   {p.name}

@@ -41,8 +41,8 @@ export function SiteFooter() {
             <img
               src={logo.thumb_url ?? logo.url}
               alt={campusName}
-              className="w-auto rounded-sm bg-white p-2"
-              style={{ height: 64 }}
+              className="rounded-sm bg-white object-contain p-2"
+              style={{ height: 64, width: "auto" }}
             />
           ) : (
             <p className="font-display text-h4 font-medium">{campusName}</p>
