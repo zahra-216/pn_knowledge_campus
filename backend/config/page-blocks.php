@@ -25,5 +25,6 @@ return [
         'partners',
         'chairman_message',
         'management_board',
+        'staff',
     ],
 ];

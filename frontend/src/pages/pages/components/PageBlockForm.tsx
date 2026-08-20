@@ -24,7 +24,8 @@ const BLOCK_TYPE_LABELS: Record<BlockType, string> = {
   testimonials: "Testimonials",
   partners: "Partners",
   chairman_message: "Chairman Message",
-  management_board: "Management Board",
+  management_board: "Board of Directors",
+  staff: "Staff",
 };
 
 const DEFAULT_DATA: Record<BlockType, Record<string, unknown>> = {
@@ -41,6 +42,7 @@ const DEFAULT_DATA: Record<BlockType, Record<string, unknown>> = {
   partners: { items: [] },
   chairman_message: { heading: "", name: "", role: "", qualifications: "", message: "", media_id: null },
   management_board: { items: [] },
+  staff: { items: [] },
 };
 
 /**
@@ -326,6 +328,21 @@ function BlockFields({
             ]}
           />
         );
+
+        case "staff":
+          return (
+            <RepeatableItemsEditor
+              items={(data.items as Record<string, string | number | null>[]) ?? []}
+              onChange={(items) => setField("items", items)}
+              addLabel="Add Staff Member"
+              fields={[
+                { key: "name", label: "Name", kind: "text" },
+                { key: "position", label: "Position", kind: "text" },
+                { key: "qualifications", label: "Qualifications (optional)", kind: "textarea" },
+                { key: "photo_media_id", label: "Photo (portrait, 4:5 works best)", kind: "media" },
+              ]}
+            />
+          );
 
     default:
       return null;

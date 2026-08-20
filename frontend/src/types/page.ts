@@ -1,7 +1,7 @@
 import type { SeoMeta } from "@/types/seo";
 
 /** Matches config('page-blocks.types') on the backend. */
-export type BlockType = "hero" | "text" | "rich_text" | "image" | "gallery" | "video" | "cta" | "faq" | "statistics" | "testimonials" | "partners" | "chairman_message" | "management_board";
+export type BlockType = "hero" | "text" | "rich_text" | "image" | "gallery" | "video" | "cta" | "faq" | "statistics" | "testimonials" | "partners" | "chairman_message" | "management_board" | "staff";
 
 export type PageStatus = "draft" | "published" | "scheduled" | "archived";
 

@@ -202,7 +202,7 @@ function Block({ block, media }: { block: PageBlock; media: ReturnType<typeof us
                   &ldquo;
                 </span>
                 {data.message && (
-                  <p className="-mt-6 whitespace-pre-line text-body leading-relaxed text-[color:var(--color-text)]">
+                  <p className="-mt-6 whitespace-pre-line text-justify text-body leading-relaxed text-[color:var(--color-text)]">
                     {data.message}
                   </p>
                 )}
@@ -373,7 +373,45 @@ function Block({ block, media }: { block: PageBlock; media: ReturnType<typeof us
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <div className="mb-8 text-center">
               <span className="font-sans text-caption font-semibold uppercase tracking-widest text-gold">Leadership</span>
-              <h2 className="mt-1 font-display text-h2 font-semibold text-[color:var(--color-text)]">Management Board</h2>
+              <h2 className="mt-1 font-display text-h2 font-semibold text-[color:var(--color-text)]">Board of Directors</h2>
+            </div>
+            <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
+              {items.map((item, i) => {
+                const photo = item.photo_media_id ? media.get(item.photo_media_id) : undefined;
+                return (
+                  <div key={i} className="flex flex-col overflow-hidden rounded-xl border border-[color:var(--pub-line)] bg-[color:var(--pub-paper)] shadow-1">
+                    {photo && (
+                      <img
+                        src={photo.url}
+                        alt={item.name}
+                        loading="lazy"
+                        decoding="async"
+                        className="aspect-[4/5] w-full object-cover"
+                      />
+                    )}
+                    <div className="p-4 text-left">
+                      <p className="font-display text-h4 font-medium text-[color:var(--color-text)]">{item.name}</p>
+                      <p className="text-body-sm text-neutral-500">{item.position}</p>
+                      {item.qualifications && <p className="mt-1 whitespace-pre-line text-caption text-neutral-400">{item.qualifications}</p>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    case "staff": {
+      const items = (block.data.items as DirectorItem[]) ?? [];
+      if (items.length === 0) return null;
+      return (
+        <section className="py-12">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+            <div className="mb-8 text-center">
+              <span className="font-sans text-caption font-semibold uppercase tracking-widest text-gold">Leadership</span>
+              <h2 className="mt-1 font-display text-h2 font-semibold text-[color:var(--color-text)]">Staff</h2>
             </div>
             <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
               {items.map((item, i) => {

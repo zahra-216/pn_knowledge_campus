@@ -116,6 +116,13 @@ class PageBlockRequest extends FormRequest
                 'data.items.*.qualifications' => ['nullable', 'string', 'max:255'],
                 'data.items.*.photo_media_id' => ['nullable', 'integer', 'exists:media,id'],
             ],
+            'staff' => [
+                'data.items' => ['required', 'array', 'min:1'],
+                'data.items.*.name' => ['required', 'string', 'max:100'],
+                'data.items.*.position' => ['required', 'string', 'max:100'],
+                'data.items.*.qualifications' => ['nullable', 'string', 'max:255'],
+                'data.items.*.photo_media_id' => ['nullable', 'integer', 'exists:media,id'],
+            ],
             default => [],
         };
     }
