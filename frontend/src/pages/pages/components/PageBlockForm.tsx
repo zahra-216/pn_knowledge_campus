@@ -220,13 +220,14 @@ function BlockFields({
         <>
           <Input label="Heading (optional)" value={str("heading")} onChange={(e) => setField("heading", e.target.value)} />
           <Input label="Name" value={str("name")} onChange={(e) => setField("name", e.target.value)} required />
-          <Input
+          <Textarea
             label="Role"
             value={str("role")}
             onChange={(e) => setField("role", e.target.value)}
+            rows={2}
             hint='Include the word "Manager" to render this as the Manager layout instead of Chairman.'
           />
-          <Input label="Qualifications (optional)" value={str("qualifications")} onChange={(e) => setField("qualifications", e.target.value)} hint="e.g. MBA, BSc (Hons) Engineering" />
+          <Textarea label="Qualifications (optional)" value={str("qualifications")} onChange={(e) => setField("qualifications", e.target.value)} rows={2} hint="e.g. MBA, BSc (Hons) Engineering" />
           <Textarea label="Message" value={str("message")} onChange={(e) => setField("message", e.target.value)} rows={6} required />
           <MediaIdField label="Photo" type="image" mediaId={num("media_id")} onChange={(id) => setField("media_id", id)} />
         </>
@@ -320,7 +321,7 @@ function BlockFields({
             fields={[
               { key: "name", label: "Name", kind: "text" },
               { key: "position", label: "Position", kind: "text" },
-              { key: "qualifications", label: "Qualifications (optional)", kind: "text" },
+              { key: "qualifications", label: "Qualifications (optional)", kind: "textarea" },
               { key: "photo_media_id", label: "Photo (portrait, 4:5 works best)", kind: "media" },
             ]}
           />

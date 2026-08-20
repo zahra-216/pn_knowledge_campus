@@ -180,7 +180,7 @@ function Block({ block, media }: { block: PageBlock; media: ReturnType<typeof us
 
       return (
         <section className={cn("py-12", isManager && "bg-[color:var(--pub-paper-tint)]")}>
-          <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-6xl px-2 sm:px-4 lg:px-6">
             <div className="mb-6 text-center md:text-left">
               <span className="font-sans text-caption font-semibold uppercase tracking-widest text-gold">Leadership</span>
               <h2 className="mt-1 font-display text-h2 font-semibold text-[color:var(--color-text)]">{heading}</h2>
@@ -209,8 +209,8 @@ function Block({ block, media }: { block: PageBlock; media: ReturnType<typeof us
                 {(data.name || data.role) && (
                   <footer className="border-t border-[color:var(--pub-line)] pt-3">
                     {data.name && <p className="font-display text-h4 font-medium text-[color:var(--color-text)]">{data.name}</p>}
-                    {data.role && <p className="text-body-sm text-neutral-500">{data.role}</p>}
-                    {data.qualifications && <p className="text-caption text-neutral-400">{data.qualifications}</p>}
+                    {data.role && <p className="whitespace-pre-line text-body-sm text-neutral-500">{data.role}</p>}
+                    {data.qualifications && <p className="whitespace-pre-line text-caption text-neutral-400">{data.qualifications}</p>}
                   </footer>
                 )}
               </div>
@@ -392,7 +392,7 @@ function Block({ block, media }: { block: PageBlock; media: ReturnType<typeof us
                     <div className="p-4 text-center">
                       <p className="font-display text-h4 font-medium text-[color:var(--color-text)]">{item.name}</p>
                       <p className="text-body-sm text-neutral-500">{item.position}</p>
-                      {item.qualifications && <p className="mt-1 text-caption text-neutral-400">{item.qualifications}</p>}
+                      {item.qualifications && <p className="mt-1 whitespace-pre-line text-caption text-neutral-400">{item.qualifications}</p>}
                     </div>
                   </div>
                 );
