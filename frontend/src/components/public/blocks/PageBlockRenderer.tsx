@@ -117,16 +117,28 @@ function Block({ block, media }: { block: PageBlock; media: ReturnType<typeof us
       const data = block.data as unknown as HeroBlockData;
       const image = data.media_id ? media.get(data.media_id) : undefined;
       return (
-        <section className="relative flex min-h-[280px] items-center overflow-hidden bg-navy text-white">
-          {image && <img src={image.url} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-40" />}
+        <section className="relative flex min-h-[340px] items-center overflow-hidden bg-gradient-to-br from-navy via-navy-dark to-navy text-white">
+          {image ? (
+            <>
+              <img src={image.url} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-b from-navy-dark/85 via-navy-dark/70 to-navy-dark/90" />
+            </>
+          ) : (
+            <>
+              {/* Decorative accent so the plain-navy case doesn't look empty */}
+              <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-gold/10 blur-3xl" />
+              <div className="pointer-events-none absolute -bottom-32 -left-16 h-72 w-72 rounded-full bg-gold/5 blur-3xl" />
+            </>
+          )}
           <div
             className={cn(
-              "relative mx-auto flex w-full max-w-5xl flex-col gap-3 px-4 py-14",
+              "relative mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-20",
               data.alignment === "left" && "items-start text-left",
               data.alignment === "right" && "items-end text-right",
               (!data.alignment || data.alignment === "center") && "items-center text-center"
             )}
           >
+            <span className="h-1 w-14 rounded-full bg-gold" />
             <h1 className="font-display text-h1 font-semibold">{data.heading}</h1>
             {data.subheading && <p className="max-w-2xl text-body-lg text-white/85">{data.subheading}</p>}
             {data.cta_url && data.cta_label && (
@@ -353,39 +365,41 @@ function Block({ block, media }: { block: PageBlock; media: ReturnType<typeof us
     }
 
     case "management_board": {
-    const items = (block.data.items as DirectorItem[]) ?? [];
-    if (items.length === 0) return null;
-    return (
-      <section className="py-12">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-8 text-center">
-            <span className="font-sans text-caption font-semibold uppercase tracking-widest text-gold">Leadership</span>
-            <h2 className="mt-1 font-display text-h2 font-semibold text-[color:var(--color-text)]">Management Board</h2>
+      const items = (block.data.items as DirectorItem[]) ?? [];
+      if (items.length === 0) return null;
+      return (
+        <section className="py-12">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+            <div className="mb-8 text-center">
+              <span className="font-sans text-caption font-semibold uppercase tracking-widest text-gold">Leadership</span>
+              <h2 className="mt-1 font-display text-h2 font-semibold text-[color:var(--color-text)]">Management Board</h2>
+            </div>
+            <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
+              {items.map((item, i) => {
+                const photo = item.photo_media_id ? media.get(item.photo_media_id) : undefined;
+                return (
+                  <div key={i} className="flex flex-col overflow-hidden rounded-xl border border-[color:var(--pub-line)] bg-[color:var(--pub-paper)] shadow-1">
+                    {photo && (
+                      <img
+                        src={photo.url}
+                        alt={item.name}
+                        loading="lazy"
+                        decoding="async"
+                        className="aspect-[4/5] w-full object-cover"
+                      />
+                    )}
+                    <div className="p-4 text-center">
+                      <p className="font-display text-h4 font-medium text-[color:var(--color-text)]">{item.name}</p>
+                      <p className="text-body-sm text-neutral-500">{item.position}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:grid-cols-4">
-            {items.map((item, i) => {
-              const photo = item.photo_media_id ? media.get(item.photo_media_id) : undefined;
-              return (
-                <div key={i} className="flex flex-col items-center text-center">
-                  {photo && (
-                    <img
-                      src={photo.url}
-                      alt={item.name}
-                      loading="lazy"
-                      decoding="async"
-                      className="h-32 w-32 rounded-full object-cover shadow-2"
-                    />
-                  )}
-                  <p className="mt-4 font-display text-h4 font-medium text-[color:var(--color-text)]">{item.name}</p>
-                  <p className="text-body-sm text-neutral-500">{item.position}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-    );
-  }
+        </section>
+      );
+    }
 
     default:
       return null;

@@ -319,7 +319,7 @@ function BlockFields({
             fields={[
               { key: "name", label: "Name", kind: "text" },
               { key: "position", label: "Position", kind: "text" },
-              { key: "photo_media_id", label: "Photo", kind: "media" },
+              { key: "photo_media_id", label: "Photo (portrait, 4:5 works best)", kind: "media" },
             ]}
           />
         );
