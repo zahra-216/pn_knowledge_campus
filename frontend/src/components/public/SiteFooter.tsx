@@ -41,7 +41,7 @@ export function SiteFooter() {
             <img
               src={logo.thumb_url ?? logo.url}
               alt={campusName}
-              className="rounded-sm bg-white object-contain p-2"
+              className="self-start rounded-sm bg-white object-contain p-2"
               style={{ height: 64, width: "auto" }}
             />
           ) : (

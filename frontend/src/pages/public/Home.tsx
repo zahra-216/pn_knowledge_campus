@@ -123,13 +123,13 @@ function WelcomeSection({ content }: { content: Record<string, unknown> }) {
     <section className="py-[var(--space-md)]">
       <Container size="wide" className="grid gap-12 lg:grid-cols-12 lg:items-center">
         {image && (
-          <Reveal className={image ? "lg:col-span-6" : "hidden"}>
+          <Reveal className={image ? "min-w-0 lg:col-span-6" : "hidden"}>
             <div className="aspect-[4/3] w-full overflow-hidden bg-[color:var(--pub-paper-tint)]">
               <img src={image.url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
             </div>
           </Reveal>
         )}
-        <Reveal delay={90} className={cn("flex flex-col gap-5", image ? "lg:col-span-6" : "lg:col-span-8")}>
+        <Reveal delay={90} className={cn("min-w-0 flex flex-col gap-5", image ? "lg:col-span-6" : "lg:col-span-8")}>
           {heading && <SectionHeading eyebrow="About" title={heading} />}
           {body && <p className="whitespace-pre-line text-body-lg text-[color:var(--pub-muted)]">{body}</p>}
         </Reveal>
@@ -150,7 +150,7 @@ function ProgrammesSection({ items }: { items: Course[] }) {
 
         <div className="grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((course, i) => (
-            <Reveal key={course.id} delay={i * 60}>
+            <Reveal key={course.id} delay={i * 60} className="min-w-0">
               <Link to={`/courses/${course.slug}`} className="group flex h-full flex-col">
                 <div className="relative aspect-[4/3] w-full overflow-hidden bg-[color:var(--pub-paper-tint)]">
                   {course.featured_image_url ? (
@@ -197,7 +197,7 @@ function NewsSection({ items }: { items: NewsArticle[] }) {
         </Reveal>
 
         <div className="grid gap-10 lg:grid-cols-12">
-          <Reveal className="lg:col-span-5">
+          <Reveal className="min-w-0 lg:col-span-5">
             <Link to={`/news/${lead.slug}`} className="group flex h-full flex-col">
               <div className="relative aspect-[4/3] w-full overflow-hidden bg-[color:var(--pub-paper-tint)]">
                 {lead.featured_image_url ? (
@@ -223,7 +223,7 @@ function NewsSection({ items }: { items: NewsArticle[] }) {
           </Reveal>
 
           {rest.length > 0 && (
-            <Reveal delay={100} className="lg:col-span-7">
+            <Reveal delay={100} className="min-w-0 lg:col-span-7">
               <ul className="flex flex-col divide-y divide-[color:var(--pub-line)] border-t border-[color:var(--pub-line)]">
                 {rest.map((n) => (
                   <li key={n.id}>
@@ -262,7 +262,7 @@ function EventsSection({ items }: { items: CampusEvent[] }) {
           {items.map((ev, i) => {
             const date = new Date(ev.starts_at);
             return (
-              <Reveal key={ev.id} delay={i * 70}>
+              <Reveal key={ev.id} delay={i * 70} className="min-w-0">
                 <Link to={`/events/${ev.slug}`} className="group flex h-full flex-col">
                   <div className="relative aspect-[16/10] w-full overflow-hidden bg-[color:var(--pub-paper)]">
                     {ev.featured_image_url ? (
@@ -427,7 +427,7 @@ function WhyChooseUsSection({ items }: { items: { icon?: string; title: string; 
       <Container size="wide">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3 lg:gap-x-12">
           {items.map((item, i) => (
-            <Reveal key={i} delay={i * 70} className="flex flex-col gap-3 border-t border-[color:var(--pub-line)] pt-6">
+            <Reveal key={i} delay={i * 70} className="flex min-w-0 flex-col gap-3 border-t border-[color:var(--pub-line)] pt-6">
               {item.icon && (
                 <span className="text-h2" aria-hidden="true">
                   {item.icon}
@@ -450,7 +450,7 @@ function StatisticsSection({ items }: { items: { label: string; value: string }[
     <StatementBand tone="ink">
       <div className="grid grid-cols-2 gap-10 lg:grid-cols-4">
         {items.map((item, i) => (
-          <Reveal key={i} delay={i * 70} className="flex flex-col gap-1">
+          <Reveal key={i} delay={i * 70} className="flex min-w-0 flex-col gap-1">
             <span className="font-display text-stat font-medium tabular-nums">{item.value}</span>
             <span className="text-body-sm text-white/60">{item.label}</span>
           </Reveal>
